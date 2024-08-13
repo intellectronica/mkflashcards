@@ -1,0 +1,5 @@
+openai
+gradio
+pydantic
+tiktoken
+langchain-text-splitters
