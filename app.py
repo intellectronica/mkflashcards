@@ -8,11 +8,12 @@ import math
 import gradio as gr
 import os
 
-def llm(response_model: BaseModel = BaseModel,
+def llm(openai_api_key: str,
+        response_model: BaseModel = BaseModel,
         system: str = None, user: str = None,
         **kwargs):
     print("LLM: ", system[:123], user[:123]) # DEBUG
-    oai = OpenAI()
+    oai = OpenAI(api_key=openai_api_key)
     messages = []
     if system:
         messages.append({"role": "system", "content": system})
@@ -35,8 +36,9 @@ class TextSummary(BaseModel):
     short_summary: str = Field(..., description="Short summary (1-2 sentences) of the text.")
     bullet_points: list[str] = Field(..., description="Summary of the text in up to 23 bullet points.")
 
-def summarize_text(txt):
+def summarize_text(openai_api_key, txt):
     return llm(
+        openai_api_key,
         TextSummary,
         'Read the user-provided text and summarize it in up to 23 bullet points.',
         txt
@@ -68,9 +70,9 @@ class Flashcard(BaseModel):
 class FlashcardSet(BaseModel):
     flashcards: list[Flashcard]
 
-def get_flashcards(txt, num_flashcards, tags):
+def get_flashcards(openai_api_key, txt, num_flashcards, tags):
     flashcard_infos = []
-    context = summarize_text(txt).dict()
+    context = summarize_text(openai_api_key, txt).dict()
     chunks = get_chunks(txt)
     flashcards_per_chunk = round(num_flashcards / len(chunks))
     print(f"Chunks: {len(chunks)} Flashcards per chunk: {flashcards_per_chunk}") # DEBUG
@@ -94,6 +96,7 @@ def get_flashcards(txt, num_flashcards, tags):
         user_input = { 'context': context, 'chunk': chunk }
 
         flashcard_infos += llm(
+            openai_api_key,
             FlashcardSet,
             system,
             json.dumps(user_input),
@@ -108,18 +111,15 @@ def get_flashcards(txt, num_flashcards, tags):
     
     return flashcards
 
-def generate_flashcards(text, num_flashcards, tags_str=''):
+def generate_flashcards(openai_api_key, text, num_flashcards, tags_str=''):
     tags = None if tags_str.strip() == '' else [tag.strip() for tag in tags_str.split(' ')]
-    flashcards = get_flashcards(text, num_flashcards, tags)
+    flashcards = get_flashcards(openai_api_key, text, num_flashcards, tags)
     print(f"Generated {len(flashcards)} flashcards.") # DEBUG
     return '\n===\n'.join(flashcards)
 
 def update_num_flashcards(text):
     num_tokens = token_count(text)
     return max(min(math.ceil(num_tokens / 123), 1000), 10), str(num_tokens)
-
-def update_openai_api_key(openai_api_key):
-    os.environ['OPENAI_API_KEY'] = openai_api_key
 
 with gr.Blocks() as mkflashcards:
     openai_api_key = gr.Textbox(label="OPENAI_API_KEY", type='password', value=os.getenv('OPENAI_API_KEY', ''))
@@ -130,9 +130,8 @@ with gr.Blocks() as mkflashcards:
         tags = gr.Textbox(label="Tags")
         generate_btn = gr.Button("Generate Flashcards")
     output = gr.Textbox(label="Flashcards", lines=23, max_lines=123, autoscroll=False, interactive=True)
-    generate_btn.click(fn=generate_flashcards, inputs=[text, num_flashcards, tags], outputs=output, api_name="generate-flashcards")
+    generate_btn.click(fn=generate_flashcards, inputs=[openai_api_key, text, num_flashcards, tags], outputs=output, api_name="generate-flashcards")
     text.change(fn=update_num_flashcards, inputs=text, outputs=[num_flashcards, num_tokens])
-    openai_api_key.change(fn=update_openai_api_key, inputs=openai_api_key)
 
 gr.close_all()
 mkflashcards.launch()
