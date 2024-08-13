@@ -1,0 +1,40 @@
+name: Deploy to Hugging Face Space
+
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Git LFS (if your repository uses large files)
+        run: |
+          sudo apt-get update
+          sudo apt-get install git-lfs
+          git lfs install
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+
+      - name: Install Hugging Face CLI
+        run: pip install huggingface_hub
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "eleanor@intellectronica.net"
+          git config --global user.name "intellectronica"
+
+      - name: Push to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          huggingface-cli login --token $HF_TOKEN
+          git remote add huggingface https://huggingface.co/spaces/your-username/your-space-name.git
+          git push huggingface main
