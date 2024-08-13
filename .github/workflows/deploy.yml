@@ -35,6 +35,6 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          huggingface-cli login --token $HF_TOKEN
-          git remote add huggingface https://huggingface.co/spaces/your-username/your-space-name.git
+          huggingface-cli login --token $MKFLASHCARDS_TOKEN
+          git remote add huggingface https://huggingface.co/spaces/intellectronica/mkflashcards.git
           git push huggingface main
