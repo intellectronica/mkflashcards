@@ -5,6 +5,8 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from textwrap import dedent
 import json
 import math
+import gradio as gr
+import os
 
 def llm(response_model: BaseModel = BaseModel,
         system: str = None, user: str = None,
@@ -105,9 +107,6 @@ def get_flashcards(txt, num_flashcards, tags):
         flashcards.append(flashcard_md.strip())
     
     return flashcards
-
-import gradio as gr
-import os
 
 def generate_flashcards(text, num_flashcards, tags_str=''):
     tags = None if tags_str.strip() == '' else [tag.strip() for tag in tags_str.split(' ')]
