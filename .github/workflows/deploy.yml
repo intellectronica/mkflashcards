@@ -1,5 +1,4 @@
 name: Deploy to Hugging Face Space
-
 on:
   push:
     branches:
@@ -7,35 +6,10 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-
-      - name: Install Git LFS (if your repository uses large files)
-        run: |
-          sudo apt-get update
-          sudo apt-get install git-lfs
-          git lfs install
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.8'
-
-      - name: Install Hugging Face CLI
-        run: pip install huggingface_hub
-
-      - name: Configure Git
-        run: |
-          git config --global user.email "eleanor@intellectronica.net"
-          git config --global user.name "intellectronica"
-
       - name: Push to Hugging Face Space
         env:
           MKFLASHCARDS_TOKEN: ${{ secrets.MKFLASHCARDS_TOKEN }}
-        run: |
-          git config --global credential.helper store
-          huggingface-cli login --token $MKFLASHCARDS_TOKEN --add-to-git-credential
-          git remote add huggingface https://huggingface.co/spaces/intellectronica/mkflashcards.git
-          git push -f huggingface main
+        run: git push -f https://intellectronica:$MKFLASHCARDS_TOKEN@huggingface.co/spaces/intellectronicaE/mkflashcards main
