@@ -35,6 +35,7 @@ jobs:
         env:
           MKFLASHCARDS_TOKEN: ${{ secrets.MKFLASHCARDS_TOKEN }}
         run: |
+          git config --global credential.helper store
           huggingface-cli login --token $MKFLASHCARDS_TOKEN --add-to-git-credential
           git remote add huggingface https://huggingface.co/spaces/intellectronica/mkflashcards.git
           git push huggingface main
