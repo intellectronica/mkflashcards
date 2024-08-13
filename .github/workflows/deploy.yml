@@ -33,7 +33,7 @@ jobs:
 
       - name: Push to Hugging Face Space
         env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          MKFLASHCARDS_TOKEN: ${{ secrets.MKFLASHCARDS_TOKEN }}
         run: |
           huggingface-cli login --token $MKFLASHCARDS_TOKEN
           git remote add huggingface https://huggingface.co/spaces/intellectronica/mkflashcards.git
