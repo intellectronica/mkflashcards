@@ -38,4 +38,5 @@ jobs:
           git config --global credential.helper store
           huggingface-cli login --token $MKFLASHCARDS_TOKEN --add-to-git-credential
           git remote add huggingface https://huggingface.co/spaces/intellectronica/mkflashcards.git
+          git pull --rebase huggingface main
           git push huggingface main
