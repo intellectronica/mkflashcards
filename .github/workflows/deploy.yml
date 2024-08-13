@@ -12,4 +12,4 @@ jobs:
       - name: Push to Hugging Face Space
         env:
           MKFLASHCARDS_TOKEN: ${{ secrets.MKFLASHCARDS_TOKEN }}
-        run: git push -f https://intellectronica:$MKFLASHCARDS_TOKEN@huggingface.co/spaces/intellectronicaE/mkflashcards main
+        run: git push -f https://intellectronica:$MKFLASHCARDS_TOKEN@huggingface.co/spaces/intellectronica/mkflashcards main
