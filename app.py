@@ -136,7 +136,7 @@ Enjoy!
 """
 
 with open('app.js', 'r') as f:
-    HEAD = f'<script>{f.read()}</script>'
+    HEAD = '' # f'<script>{f.read()}</script>'
 
 def generate_flashcards(openai_api_key, text, num_flashcards, tags_str=''):
     tags = None if tags_str.strip() == '' else [tag.strip() for tag in tags_str.split(' ')]
