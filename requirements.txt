@@ -3,3 +3,4 @@ gradio
 pydantic
 tiktoken
 langchain-text-splitters
+requests

@@ -7,6 +7,7 @@ import json
 import math
 import gradio as gr
 import os
+import requests
 
 def llm(openai_api_key: str,
         response_model: BaseModel = BaseModel,
@@ -121,8 +122,19 @@ def update_num_flashcards(text):
     num_tokens = token_count(text)
     return max(min(math.ceil(num_tokens / 123), 1000), 10), str(num_tokens)
 
+def fetch_text(url, jina_api_key):
+    print(f'Fetching text from {url}')
+    return requests.get(
+        f'https://r.jina.ai/{url}',
+        headers={'Authorization': f'Bearer {jina_api_key}'}
+    ).text
+
 with gr.Blocks() as mkflashcards:
     openai_api_key = gr.Textbox(label="OPENAI_API_KEY", type='password', value=os.getenv('OPENAI_API_KEY', ''))
+    with gr.Row():
+        jina_api_key = gr.Textbox(label="JINA_API_KEY", type='password', value=os.getenv('JINA_API_KEY', ''))
+        url = gr.Textbox(label="URL", lines=1, max_lines=1)
+        fetch_btn = gr.Button("Fetch Text")
     text = gr.Textbox(label="Text", lines=7, max_lines=7)
     num_tokens = gr.Markdown('')
     with gr.Row():
@@ -131,6 +143,7 @@ with gr.Blocks() as mkflashcards:
         generate_btn = gr.Button("Generate Flashcards")
     output = gr.Textbox(label="Flashcards", lines=23, max_lines=123, autoscroll=False, interactive=True)
     generate_btn.click(fn=generate_flashcards, inputs=[openai_api_key, text, num_flashcards, tags], outputs=output, api_name="generate-flashcards")
+    fetch_btn.click(fn=fetch_text, inputs=[url, jina_api_key], outputs=text, api_name="fetch-text")
     text.change(fn=update_num_flashcards, inputs=text, outputs=[num_flashcards, num_tokens])
 
 gr.close_all()
