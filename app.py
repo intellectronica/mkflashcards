@@ -118,7 +118,7 @@ ABOUT = """
 This app uses AI to generate flashcards from a piece of text.
 
 ## Instructions
-1. Enter your OpenAI API key. It will be used for generating the flashcards. The API key is pased to the server for processing but is not stored anywhere. You can get an API key from [OpenAI](https://platform.openai.com/).
+1. Enter your OpenAI API key. It will be used for generating the flashcards. You can get an API key from [OpenAI](https://platform.openai.com/). API keys are pased to the server for processing but not stored on the server (they are stored locally in your browser for you convenience - remove after use if necessary).
 2. If you'd like to fetch text from a URL (web page, PDF, etc...), enter the URL and your Jina API key, then click "Fetch Text". You can get a Jina API key from [Jina](https://jina.ai/).
 3. You can also just paste the text directly into the "Text" box.
 4. The app will suggest a number of flashcards to generate based on the length of the text. You can adjust this number if you like.
@@ -134,6 +134,9 @@ This app uses AI to generate flashcards from a piece of text.
 
 Enjoy!
 """
+
+with open('app.js', 'r') as f:
+    HEAD = f'<script>{f.read()}</script>'
 
 def generate_flashcards(openai_api_key, text, num_flashcards, tags_str=''):
     tags = None if tags_str.strip() == '' else [tag.strip() for tag in tags_str.split(' ')]
@@ -152,11 +155,19 @@ def fetch_text(url, jina_api_key):
         headers={'Authorization': f'Bearer {jina_api_key}'}
     ).text
 
-with gr.Blocks() as mkflashcards:
+with gr.Blocks(head=HEAD) as mkflashcards:
     with gr.Tab('Make Flashcards'):
-        openai_api_key = gr.Textbox(label="OPENAI_API_KEY", type='password', value=os.getenv('OPENAI_API_KEY', ''))
+        openai_api_key = gr.Textbox(
+            label='OPENAI_API_KEY', type='password',
+            value=os.getenv('OPENAI_API_KEY', ''),
+            elem_id='OPENAI_API_KEY',
+        )
         with gr.Row():
-            jina_api_key = gr.Textbox(label="JINA_API_KEY", type='password', value=os.getenv('JINA_API_KEY', ''))
+            jina_api_key = gr.Textbox(
+                label='JINA_API_KEY', type='password',
+                value=os.getenv('JINA_API_KEY', ''),
+                elem_id='JINA_API_KEY',
+            )
             url = gr.Textbox(label="URL", lines=1, max_lines=1)
             fetch_btn = gr.Button("Fetch Text")
         text = gr.Textbox(label="Text", lines=7, max_lines=7)
