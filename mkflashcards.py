@@ -4,10 +4,8 @@ import tiktoken
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from textwrap import dedent
 import json
-import math
-import gradio as gr
-import os
 import requests
+import math
 
 def llm(openai_api_key: str,
         response_model: BaseModel = BaseModel,
@@ -112,6 +110,23 @@ def get_flashcards(openai_api_key, txt, num_flashcards, tags):
     
     return flashcards
 
+def fetch_text(url, jina_api_key):
+    print(f'Fetching text from {url}')
+    return requests.get(
+        f'https://r.jina.ai/{url}',
+        headers={'Authorization': f'Bearer {jina_api_key}'}
+    ).text
+
+def generate_flashcards(openai_api_key, text, num_flashcards, tags_str=''):
+    tags = None if tags_str.strip() == '' else [tag.strip() for tag in tags_str.split(' ')]
+    flashcards = get_flashcards(openai_api_key, text, num_flashcards, tags)
+    print(f"Generated {len(flashcards)} flashcards.") # DEBUG
+    return '\n===\n'.join(flashcards)
+
+def update_num_flashcards(text):
+    num_tokens = token_count(text)
+    return max(min(math.ceil(num_tokens / 123), 1000), 10), str(num_tokens)
+
 ABOUT = """
 # Make Flashcards, automagically, with AI!
 
@@ -134,54 +149,3 @@ This app uses AI to generate flashcards from a piece of text.
 
 Enjoy!
 """
-
-with open('app.js', 'r') as f:
-    HEAD = '' # f'<script>{f.read()}</script>'
-
-def generate_flashcards(openai_api_key, text, num_flashcards, tags_str=''):
-    tags = None if tags_str.strip() == '' else [tag.strip() for tag in tags_str.split(' ')]
-    flashcards = get_flashcards(openai_api_key, text, num_flashcards, tags)
-    print(f"Generated {len(flashcards)} flashcards.") # DEBUG
-    return '\n===\n'.join(flashcards)
-
-def update_num_flashcards(text):
-    num_tokens = token_count(text)
-    return max(min(math.ceil(num_tokens / 123), 1000), 10), str(num_tokens)
-
-def fetch_text(url, jina_api_key):
-    print(f'Fetching text from {url}')
-    return requests.get(
-        f'https://r.jina.ai/{url}',
-        headers={'Authorization': f'Bearer {jina_api_key}'}
-    ).text
-
-with gr.Blocks(head=HEAD) as mkflashcards:
-    with gr.Tab('Make Flashcards'):
-        openai_api_key = gr.Textbox(
-            label='OPENAI_API_KEY', type='password',
-            value=os.getenv('OPENAI_API_KEY', ''),
-            elem_id='OPENAI_API_KEY',
-        )
-        with gr.Row():
-            jina_api_key = gr.Textbox(
-                label='JINA_API_KEY', type='password',
-                value=os.getenv('JINA_API_KEY', ''),
-                elem_id='JINA_API_KEY',
-            )
-            url = gr.Textbox(label="URL", lines=1, max_lines=1)
-            fetch_btn = gr.Button("Fetch Text")
-        text = gr.Textbox(label="Text", lines=7, max_lines=7)
-        num_tokens = gr.Markdown('')
-        with gr.Row():
-            num_flashcards = gr.Number(value=23, minimum=10, maximum=1000, label="Number of flashcards to generate")
-            tags = gr.Textbox(label="Tags")
-            generate_btn = gr.Button("Generate Flashcards")
-        output = gr.Textbox(label="Flashcards", lines=23, max_lines=123, autoscroll=False, interactive=True)
-        generate_btn.click(fn=generate_flashcards, inputs=[openai_api_key, text, num_flashcards, tags], outputs=output, api_name="generate-flashcards")
-        fetch_btn.click(fn=fetch_text, inputs=[url, jina_api_key], outputs=text, api_name="fetch-text")
-        text.change(fn=update_num_flashcards, inputs=text, outputs=[num_flashcards, num_tokens])
-    with gr.Tab('About / Instructions'):
-        gr.Markdown(ABOUT)
-
-gr.close_all()
-mkflashcards.launch()
