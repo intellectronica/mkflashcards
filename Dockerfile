@@ -4,4 +4,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app.py .
 COPY mkflashcards.py .
 COPY app.js .
+RUN touch .sesskey
+RUN chmod u+w .sesskey
 CMD ["python", "app.py"]
