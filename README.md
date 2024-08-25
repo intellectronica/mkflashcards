@@ -3,9 +3,9 @@ title: MkFlashcards
 emoji: 📇
 colorFrom: yellow
 colorTo: purple
-sdk: gradio
-sdk_version: 4.41.0
-app_file: app.py
+sdk: docker
+app_port: 5001
+app_file: fhapp.py
 pinned: true
 license: mit
 ---
