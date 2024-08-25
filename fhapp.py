@@ -5,46 +5,60 @@ from markdown import markdown
 
 from mkflashcards import *
 
-app, rt = fh.fast_app(live=True)
+def app_js():
+    with open('app.js') as f:
+        return f.read()
+
+app, rt = fh.fast_app(
+    hdrs=[fh.Script(app_js())],
+)
+
+@app.post('/-/fetch-text')
+async def do_fetch_text(jina_api_key: str, url: str, *args, **kwargs):
+    return fetch_text(url, jina_api_key)
+
+@app.post('/-/generate-flashcards')
+async def do_fetch_text(openai_api_key: str, num_flashcards: int, tags: str, text: str, *args, **kwargs):
+    return generate_flashcards(openai_api_key, text, num_flashcards, tags)
 
 @app.get("/")
 def home():
-    return (
+    return fh.Form(
         fh.Container(
             fh.Card(fh.NotStr(markdown(ABOUT))),
             fh.Group(
                 fh.B('OPENAI_API_KEY'),
-                fh.Input(type='password', value=os.getenv('OPENAI_API_KEY', ''), id='OPENAI_API_KEY'),
+                fh.Input(name='openai_api_key', type='password', value=os.getenv('OPENAI_API_KEY', ''), id='openai_api_key'),
             ),
             fh.Grid(
                 fh.Group(
                     fh.B('JINA_API_KEY'),
-                    fh.Input(type='password', value=os.getenv('JINA_API_KEY', ''), id='JINA_API_KEY'),
+                    fh.Input(name='jina_api_key', type='password', value=os.getenv('JINA_API_KEY', ''), id='jina_api_key'),
                 ),
                 fh.Group(
                     fh.B('URL'),
-                    fh.Input(type='text', id='URL'),
+                    fh.Input(name='url', type='text', id='url'),
                 ),
-                fh.Button('Fetch Text'),
+                fh.Button('Fetch Text', hx_post='/-/fetch-text', hx_target='#text', hx_swap='innerHTML'),
             ),
             fh.Group(
                 fh.B('Text'),
-                fh.Textarea(rows=7, id='TEXT'),
+                fh.Textarea(name='text', rows=7, id='text'),
             ),
             fh.Grid(
                 fh.Group(
                     fh.B('Number of flashcards to generate'),
-                    fh.Input(type='number', value=23, id='NUM_FLASHCARDS'),
+                    fh.Input(name='num_flashcards', type='number', value=23, id='num_flashcards'),
                 ),
                 fh.Group(
                     fh.B('Tags'),
-                    fh.Input(type='text', id='TAGS'),
+                    fh.Input(name='tags', type='text', id='tags'),
                 ),
-                fh.Button('Generate Flashcards'),
+                fh.Button('Generate Flashcards', hx_post='/-/generate-flashcards', hx_target='#flashcards', hx_swap='innerHTML'),
             ),
             fh.Group(
                 fh.B('Flashcards'),
-                fh.Textarea(rows=23, id='FLASHCARDS'),
+                fh.Textarea(rows=23, id='flashcards'),
             ),
         ),
     )

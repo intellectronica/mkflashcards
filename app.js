@@ -1,28 +1,21 @@
-const API_KEY_FIELDS = ['OPENAI_API_KEY', 'JINA_API_KEY'];
+window.onload = () => {
+  const API_KEY_FIELDS = ['openai_api_key', 'jina_api_key'];
 
-function getAPIKeyTextbox(apiKeyField) {
-  return document.getElementById(apiKeyField).getElementsByTagName('input')[0];
-}
-
-function initializeTextboxListeners() {
   for (let apiKeyField of API_KEY_FIELDS) {
-    getAPIKeyTextbox(apiKeyField).addEventListener('input', () => {
-      localStorage.setItem(apiKeyField, getAPIKeyTextbox(apiKeyField).value);
+    document.getElementById(apiKeyField).addEventListener('input', () => {
+      localStorage.setItem(apiKeyField, document.getElementById(apiKeyField).value);
     });
   }
-}
 
-function populateTextboxesFromLocalStorsge() {
   for (let apiKeyField of API_KEY_FIELDS) {
-    const textbox = getAPIKeyTextbox(apiKeyField);
+    const textbox = document.getElementById(apiKeyField);
     const apiKeyValue = localStorage.getItem(apiKeyField);
     if (apiKeyValue && textbox.value === '') {
       textbox.value = apiKeyValue;
     }
   }
-}
 
-window.setTimeout(() => {
-  initializeTextboxListeners();
-  populateTextboxesFromLocalStorsge();
-}, 1234);
+  document.getElementById('text').addEventListener('change', () => {
+    document.getElementById('num_flashcards').value = Math.round(document.getElementById('text').value.length / 234);
+  });
+}
