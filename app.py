@@ -18,17 +18,27 @@ async def do_fetch_text(jina_api_key: str, url: str, *args, **kwargs):
     return fetch_text(url, jina_api_key)
 
 @app.post('/-/generate-flashcards')
-async def do_fetch_text(openai_api_key: str, num_flashcards: int, tags: str, text: str, *args, **kwargs):
-    return generate_flashcards(openai_api_key, text, num_flashcards, tags)
+async def do_fetch_text(openai_api_key: str, model: str, num_flashcards: int, tags: str, text: str, *args, **kwargs):
+    return generate_flashcards(openai_api_key, model, text, num_flashcards, tags)
 
 @app.get("/")
 def home():
     return fh.Form(
         fh.Container(
             fh.Card(fh.NotStr(markdown(ABOUT))),
-            fh.Group(
-                fh.B('OPENAI_API_KEY'),
-                fh.Input(name='openai_api_key', type='password', value=os.getenv('OPENAI_API_KEY', ''), id='openai_api_key'),
+            fh.Grid(
+                fh.Group(
+                    fh.B('OPENAI_API_KEY'),
+                    fh.Input(name='openai_api_key', type='password', value=os.getenv('OPENAI_API_KEY', ''), id='openai_api_key'),
+                ),
+                fh.Group(
+                    fh.B('Model'),
+                    fh.Select(
+                        fh.Option('gpt-4o-mini', selected=True),
+                        fh.Option('gpt-4o-2024-08-06'),
+                        name='model', id='model',
+                    ),
+                ),
             ),
             fh.Grid(
                 fh.Group(

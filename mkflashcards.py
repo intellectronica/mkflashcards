@@ -8,6 +8,7 @@ import requests
 import math
 
 def llm(openai_api_key: str,
+        model: str,
         response_model: BaseModel = BaseModel,
         system: str = None, user: str = None,
         **kwargs):
@@ -19,7 +20,7 @@ def llm(openai_api_key: str,
     if user:
         messages.append({"role": "user", "content": user})
     result = oai.beta.chat.completions.parse(
-        model='gpt-4o-2024-08-06',
+        model=model,
         messages=messages,
         response_format=response_model,
         **kwargs,
@@ -35,9 +36,10 @@ class TextSummary(BaseModel):
     short_summary: str = Field(..., description="Short summary (1-2 sentences) of the text.")
     bullet_points: list[str] = Field(..., description="Summary of the text in up to 23 bullet points.")
 
-def summarize_text(openai_api_key, txt):
+def summarize_text(openai_api_key, model, txt):
     return llm(
         openai_api_key,
+        model,
         TextSummary,
         'Read the user-provided text and summarize it in up to 23 bullet points.',
         txt
@@ -69,9 +71,9 @@ class Flashcard(BaseModel):
 class FlashcardSet(BaseModel):
     flashcards: list[Flashcard]
 
-def get_flashcards(openai_api_key, txt, num_flashcards, tags):
+def get_flashcards(openai_api_key, model, txt, num_flashcards, tags):
     flashcard_infos = []
-    context = summarize_text(openai_api_key, txt).dict()
+    context = summarize_text(openai_api_key, model, txt).dict()
     chunks = get_chunks(txt)
     flashcards_per_chunk = round(num_flashcards / len(chunks))
     print(f"Chunks: {len(chunks)} Flashcards per chunk: {flashcards_per_chunk}") # DEBUG
@@ -96,6 +98,7 @@ def get_flashcards(openai_api_key, txt, num_flashcards, tags):
 
         flashcard_infos += llm(
             openai_api_key,
+            model,
             FlashcardSet,
             system,
             json.dumps(user_input),
@@ -117,9 +120,9 @@ def fetch_text(url, jina_api_key):
         headers={'Authorization': f'Bearer {jina_api_key}'}
     ).text
 
-def generate_flashcards(openai_api_key, text, num_flashcards, tags_str=''):
+def generate_flashcards(openai_api_key, model, text, num_flashcards, tags_str=''):
     tags = None if tags_str.strip() == '' else [tag.strip() for tag in tags_str.split(' ')]
-    flashcards = get_flashcards(openai_api_key, text, num_flashcards, tags)
+    flashcards = get_flashcards(openai_api_key, model, text, num_flashcards, tags)
     print(f"Generated {len(flashcards)} flashcards.") # DEBUG
     return '\n===\n'.join(flashcards)
 
