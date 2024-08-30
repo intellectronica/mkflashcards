@@ -6,4 +6,4 @@ COPY mkflashcards.py .
 COPY app.js .
 RUN touch .sesskey
 RUN chmod u+w .sesskey
-CMD ["python", "app.py"]
+CMD ["python", "-m", "uvicorn", "app:app", "--port", "8080"]
