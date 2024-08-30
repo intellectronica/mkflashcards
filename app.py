@@ -9,8 +9,12 @@ def app_js():
     with open('app.js') as f:
         return f.read()
 
+def app_css():
+    with open('app.css') as f:
+        return f.read()
+
 app, rt = fast_app(
-    hdrs=[Script(app_js())],
+    hdrs=[Script(app_js()), Style(app_css())],
 )
 
 @app.post('/-/fetch-text')
@@ -80,7 +84,10 @@ def home():
                     B('URL'),
                     Input(name='url', type='text', id='url'),
                 ),
-                Button('Fetch Text', hx_post='/-/fetch-text', hx_target='#text', hx_swap='innerHTML'),
+                Div(
+                    P('⚙️', cls='htmx-indicator', id='fetch_spinner'),
+                    Button('Fetch Text', hx_post='/-/fetch-text', hx_target='#text', hx_swap='innerHTML', hx_indicator='#fetch_spinner'),
+                )
             ),
             Div(
                 B('Text'),
@@ -95,7 +102,10 @@ def home():
                     B('Tags'),
                     Input(name='tags', type='text', id='tags'),
                 ),
-                Button('Generate Flashcards', hx_post='/-/generate-flashcards', hx_target='#flashcards', hx_swap='innerHTML'),
+                Div(
+                    P('⚙️', cls='htmx-indicator', id='generate_spinner'),
+                    Button('Generate Flashcards', hx_post='/-/generate-flashcards', hx_target='#flashcards', hx_swap='innerHTML', hx_indicator='#generate_spinner'),
+                ),
             ),
             Div(
                 B('Flashcards'),
