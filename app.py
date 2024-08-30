@@ -21,6 +21,29 @@ async def do_fetch_text(jina_api_key: str, url: str, *args, **kwargs):
 async def do_fetch_text(openai_api_key: str, model: str, num_flashcards: int, tags: str, text: str, *args, **kwargs):
     return generate_flashcards(openai_api_key, model, text, num_flashcards, tags)
 
+ABOUT = """
+# Make Flashcards, automagically, with AI!
+
+This app uses AI to generate flashcards from a piece of text.
+
+## Instructions
+1. Enter your OpenAI API key. It will be used for generating the flashcards. You can get an API key from [OpenAI](https://platform.openai.com/). API keys are pased to the server for processing but not stored on the server (they are stored locally in your browser for you convenience - remove after use if necessary).
+2. If you'd like to fetch text from a URL (web page, PDF, etc...), enter the URL and your Jina API key, then click "Fetch Text". You can get a Jina API key from [Jina](https://jina.ai/).
+3. You can also just paste the text directly into the "Text" box.
+4. The app will suggest a number of flashcards to generate based on the length of the text. You can adjust this number if you like.
+5. Optionally, you can add tags to the flashcards. The format is a space-separated list of tags *(e.g. "biology philosophy science-fiction")*.
+6. Click "Generate Flashcards" to generate the flashcards. Wait a bit.
+7. The flashcards will appear in the "Flashcards" box. The format is Markdown, with the front and the back separated by `---` and cards separated by `===`. You can copy and import into your favourite spaced-repetition app.
+  - (If you're using [Mochi](https://mochi.cards/), you can easily import the flashcars by saving the text to a `.md` file, and importing it using the Markdown format from a single file and entering `===` as the cards separator.)
+
+---
+
+- Created by [intellectronica](https://intellectronica.net/).
+- Source code on at [github.com/intellectronica/mkflashcards](https://github.com/intellectronica/mkflashcards).
+
+Enjoy!
+"""
+
 @app.get("/")
 def home():
     return Form(
