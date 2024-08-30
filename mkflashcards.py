@@ -35,7 +35,7 @@ def summarize_text(openai_api_key, model, txt):
         openai_api_key,
         model,
         TextSummary,
-        'Read the user-provided text and summarize it in up to 23 bullet points.',
+        'Read the user-provided text and summarize it with a title, short summary, and up to 23 bullet points.',
         txt
     )
 
@@ -59,7 +59,7 @@ class Flashcard(BaseModel):
     ))
     quote: str = Field(..., description=(
         'Quote from the text that the flashcard is based on. '
-        'Include a short verbarim excerpt from the text that the flashcard is based on.'
+        'Include a short (2-3 sentences) verbarim excerpt from the text that the flashcard is based on.'
     ))
 
 class FlashcardSet(BaseModel):
@@ -77,14 +77,14 @@ def get_flashcards(openai_api_key, model, txt, num_flashcards):
         You help the user remember the most important
         information from the text by creating flashcards.
         The text in the flashcards should be concise and authoritative.
-        Don't use phrases like "according to the author" or "in the artice",
-        just present the information as if it were a fact.
+        Don't use phrases like "according to the author" or "in the artice"
+        or "according to the text", just present the information as if it were a fact.
         The user-provided input includes `context`, with information about the document
         and a summary of the entire document in bullet points, and `chunk`,
         a part of the text to focus on when creating the flashcards.
         Read the user-provided input carefully and generate
-        {flashcards_per_chunk} flashcards. IMPORTANT: IT IS CRUCIAL
-        THAT YOU GENERATE EXACTLY {flashcards_per_chunk} FLASHCARDS.
+        {flashcards_per_chunk} flashcards.
+        IMPORTANT: IT IS CRUCIAL THAT YOU FOLLOW THE INSTRUCTIONS ABOVE EXACTLY.
         """).strip()
 
         user_input = { 'context': context, 'chunk': chunk }
