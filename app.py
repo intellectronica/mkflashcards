@@ -7,13 +7,10 @@ from mkflashcards import *
 
 app, rt = fast_app(
     hdrs=[Script(src='/app.js'), Style(src='/app.css')],
+    static_path=None,
 )
 
 reg_re_param('static', 'js|css|svg')
-
-@app.get("/{fname:path}.{ext:static}")
-def static(fname: str, ext: str):
-    return FileResponse(f'{fname}.{ext}')
 
 @app.post('/-/fetch-text')
 async def do_fetch_text(jina_api_key: str, url: str, *args, **kwargs):
