@@ -10,8 +10,6 @@ app, rt = fast_app(
     static_path=None,
 )
 
-reg_re_param('static', 'js|css|svg')
-
 @app.post('/-/fetch-text')
 async def do_fetch_text(jina_api_key: str, url: str, *args, **kwargs):
     return fetch_text(url, jina_api_key)
