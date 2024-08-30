@@ -65,7 +65,7 @@ class Flashcard(BaseModel):
 class FlashcardSet(BaseModel):
     flashcards: list[Flashcard]
 
-def get_flashcards(openai_api_key, model, txt, num_flashcards, tags):
+def get_flashcards(openai_api_key, model, txt, num_flashcards):
     flashcard_infos = []
     context = summarize_text(openai_api_key, model, txt).dict()
     chunks = get_chunks(txt)
@@ -96,15 +96,8 @@ def get_flashcards(openai_api_key, model, txt, num_flashcards, tags):
             system,
             json.dumps(user_input),
         ).flashcards
-
-    flashcards = []
-    for flashcard_info in flashcard_infos:
-        flashcard_md = f'### {flashcard_info.front.strip()}\n---\n{flashcard_info.back.strip()}\n\n> {flashcard_info.quote.strip()}'
-        if tags is not None:
-            flashcard_md += f"\n\n{' '.join(['#' + tag for tag in tags])}"
-        flashcards.append(flashcard_md.strip())
     
-    return flashcards
+    return flashcard_infos
 
 def fetch_text(url, jina_api_key):
     return requests.get(
@@ -112,7 +105,3 @@ def fetch_text(url, jina_api_key):
         headers={'Authorization': f'Bearer {jina_api_key}'}
     ).text
 
-def generate_flashcards(openai_api_key, model, text, num_flashcards, tags_str=''):
-    tags = None if tags_str.strip() == '' else [tag.strip() for tag in tags_str.split(' ')]
-    flashcards = get_flashcards(openai_api_key, model, text, num_flashcards, tags)
-    return '\n===\n'.join(flashcards)

@@ -18,8 +18,16 @@ async def do_fetch_text(jina_api_key: str, url: str, *args, **kwargs):
     return fetch_text(url, jina_api_key)
 
 @app.post('/-/generate-flashcards')
-async def do_fetch_text(openai_api_key: str, model: str, num_flashcards: int, tags: str, text: str, *args, **kwargs):
-    return generate_flashcards(openai_api_key, model, text, num_flashcards, tags)
+async def do_generate_flashcards(openai_api_key: str, model: str, num_flashcards: int, tags: str, text: str, *args, **kwargs):
+    tags_lst = None if tags.strip() == '' else [tag.strip() for tag in tags.split(' ')]
+    flashcard_mds = []
+    flashcards= get_flashcards(openai_api_key, model, text, num_flashcards)
+    for flashcard in flashcards:
+        flashcard_md = f'### {flashcard.front.strip()}\n---\n{flashcard.back.strip()}\n\n> {flashcard.quote.strip()}'
+        if tags_lst is not None:
+            flashcard_md += f"\n\n{' '.join(['#' + tag for tag in tags_lst])}"
+        flashcard_mds.append(flashcard_md.strip())
+    return '\n===\n'.join(flashcard_mds)
 
 ABOUT = """
 # Make Flashcards, automagically, with AI!
