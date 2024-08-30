@@ -12,7 +12,6 @@ def llm(openai_api_key: str,
         response_model: BaseModel = BaseModel,
         system: str = None, user: str = None,
         **kwargs):
-    print("LLM: ", system[:123], user[:123]) # DEBUG
     oai = OpenAI(api_key=openai_api_key)
     messages = []
     if system:
@@ -76,7 +75,6 @@ def get_flashcards(openai_api_key, model, txt, num_flashcards, tags):
     context = summarize_text(openai_api_key, model, txt).dict()
     chunks = get_chunks(txt)
     flashcards_per_chunk = round(num_flashcards / len(chunks))
-    print(f"Chunks: {len(chunks)} Flashcards per chunk: {flashcards_per_chunk}") # DEBUG
 
     for chunk in chunks:
         system = dedent(f"""
@@ -114,7 +112,6 @@ def get_flashcards(openai_api_key, model, txt, num_flashcards, tags):
     return flashcards
 
 def fetch_text(url, jina_api_key):
-    print(f'Fetching text from {url}')
     return requests.get(
         f'https://r.jina.ai/{url}',
         headers={'Authorization': f'Bearer {jina_api_key}'}
@@ -123,7 +120,6 @@ def fetch_text(url, jina_api_key):
 def generate_flashcards(openai_api_key, model, text, num_flashcards, tags_str=''):
     tags = None if tags_str.strip() == '' else [tag.strip() for tag in tags_str.split(' ')]
     flashcards = get_flashcards(openai_api_key, model, text, num_flashcards, tags)
-    print(f"Generated {len(flashcards)} flashcards.") # DEBUG
     return '\n===\n'.join(flashcards)
 
 def update_num_flashcards(text):
