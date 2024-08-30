@@ -18,4 +18,18 @@ window.onload = () => {
   document.getElementById('text').addEventListener('change', () => {
     document.getElementById('num_flashcards').value = Math.round(document.getElementById('text').value.length / 234);
   });
+
+  document.getElementById('download').addEventListener('click', (event) => {
+    event.preventDefault();
+    const content = document.getElementById('flashcards').value;
+    const blob = new Blob([content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'flashcards.md';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
 }

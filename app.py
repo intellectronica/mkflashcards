@@ -109,7 +109,8 @@ def home():
             ),
             Div(
                 B('Flashcards'),
-                Textarea(rows=23, id='flashcards'),
+                Textarea(name='flashcards', rows=23, id='flashcards'),
+                Button('Download', id='download'),
             ),
         ),
     )
