@@ -8,3 +8,7 @@
 .htmx-request.htmx-indicator{
   opacity:1;
 }
+
+textarea {
+  font-family: monospace;
+}
