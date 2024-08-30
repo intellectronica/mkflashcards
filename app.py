@@ -5,14 +5,9 @@ from markdown import markdown
 
 from mkflashcards import *
 
-app = FastHTML(
+app, rt = fast_app(
     hdrs=[Script(src='/app.js'), Style(src='/app.css')],
 )
-
-reg_re_param('staticext', 'css|js|svg')
-@app.get(r'/{path:path}.{ext:staticext}')
-def serve_files(path: str, ext: str):
-    return FileResponse(f'{path}.{ext}')
 
 @app.post('/-/fetch-text')
 async def do_fetch_text(jina_api_key: str, url: str, *args, **kwargs):
@@ -53,7 +48,7 @@ This app uses AI to generate flashcards from a piece of text.
 Enjoy!
 """
 
-@app.get('/')
+@app.get("/")
 def home():
     return Title('MkFlashcards'), Form(
         Container(
