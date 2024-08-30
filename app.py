@@ -5,16 +5,8 @@ from markdown import markdown
 
 from mkflashcards import *
 
-def app_js():
-    with open('app.js') as f:
-        return f.read()
-
-def app_css():
-    with open('app.css') as f:
-        return f.read()
-
 app, rt = fast_app(
-    hdrs=[Script(app_js()), Style(app_css())],
+    hdrs=[Script(src='/app.js'), Style(src='/app.css')],
 )
 
 @app.post('/-/fetch-text')
@@ -91,7 +83,7 @@ def home():
             ),
             Div(
                 B('Text'),
-                Textarea(name='text', rows=7, id='text'),
+                Textarea(name='text', rows=7, id='text', style='font-family: monospace'),
             ),
             Grid(
                 Div(
@@ -109,7 +101,7 @@ def home():
             ),
             Div(
                 B('Flashcards'),
-                Textarea(name='flashcards', rows=13, id='flashcards'),
+                Textarea(name='flashcards', rows=13, id='flashcards', style='font-family: monospace'),
                 Button('Download', id='download'),
             ),
         ),
