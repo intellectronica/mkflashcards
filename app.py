@@ -50,11 +50,11 @@ def home():
         Container(
             Card(NotStr(markdown(ABOUT))),
             Grid(
-                Group(
+                Div(
                     B('OPENAI_API_KEY'),
                     Input(name='openai_api_key', type='password', value=os.getenv('OPENAI_API_KEY', ''), id='openai_api_key'),
                 ),
-                Group(
+                Div(
                     B('Model'),
                     Select(
                         Option('gpt-4o-mini', selected=True),
@@ -64,32 +64,32 @@ def home():
                 ),
             ),
             Grid(
-                Group(
+                Div(
                     B('JINA_API_KEY'),
                     Input(name='jina_api_key', type='password', value=os.getenv('JINA_API_KEY', ''), id='jina_api_key'),
                 ),
-                Group(
+                Div(
                     B('URL'),
                     Input(name='url', type='text', id='url'),
                 ),
                 Button('Fetch Text', hx_post='/-/fetch-text', hx_target='#text', hx_swap='innerHTML'),
             ),
-            Group(
+            Div(
                 B('Text'),
                 Textarea(name='text', rows=7, id='text'),
             ),
             Grid(
-                Group(
+                Div(
                     B('Number of flashcards to generate'),
                     Input(name='num_flashcards', type='number', value=23, id='num_flashcards'),
                 ),
-                Group(
+                Div(
                     B('Tags'),
                     Input(name='tags', type='text', id='tags'),
                 ),
                 Button('Generate Flashcards', hx_post='/-/generate-flashcards', hx_target='#flashcards', hx_swap='innerHTML'),
             ),
-            Group(
+            Div(
                 B('Flashcards'),
                 Textarea(rows=23, id='flashcards'),
             ),
