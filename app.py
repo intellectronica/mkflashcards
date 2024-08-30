@@ -58,7 +58,7 @@ Enjoy!
 
 @app.get("/")
 def home():
-    return Form(
+    return Title('MkFlashcards'), Form(
         Container(
             Card(NotStr(markdown(ABOUT))),
             Grid(
