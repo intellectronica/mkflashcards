@@ -85,7 +85,7 @@ def home():
                     Input(name='url', type='text', id='url'),
                 ),
                 Div(
-                    P('⚙️', cls='htmx-indicator', id='fetch_spinner'),
+                    Img(src='/spinner.svg', cls='htmx-indicator', id='fetch_spinner'),
                     Button('Fetch Text', hx_post='/-/fetch-text', hx_target='#text', hx_swap='innerHTML', hx_indicator='#fetch_spinner'),
                 )
             ),
@@ -103,7 +103,7 @@ def home():
                     Input(name='tags', type='text', id='tags'),
                 ),
                 Div(
-                    P('⚙️', cls='htmx-indicator', id='generate_spinner'),
+                    Img(src='/spinner.svg', cls='htmx-indicator', id='generate_spinner'),
                     Button('Generate Flashcards', hx_post='/-/generate-flashcards', hx_target='#flashcards', hx_swap='innerHTML', hx_indicator='#generate_spinner'),
                 ),
             ),
