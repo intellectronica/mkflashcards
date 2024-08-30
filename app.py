@@ -9,6 +9,8 @@ app, rt = fast_app(
     hdrs=[Script(src='/app.js'), Style(src='/app.css')],
 )
 
+reg_re_param('static', 'js|css|svg')
+
 @app.get("/{fname:path}.{ext:static}")
 def static(fname: str, ext: str):
     return FileResponse(f'{fname}.{ext}')
