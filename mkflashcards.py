@@ -5,6 +5,7 @@ from textwrap import dedent
 import json
 import requests
 import math
+import random
 
 def llm(openai_api_key: str,
         model: str,
@@ -25,6 +26,20 @@ def llm(openai_api_key: str,
     )
     return result.choices[0].message.parsed
 
+def fit_text(txt, max_length=345678, chunk_size=1234):
+    if len(txt) <= max_length:
+        return txt
+    chunks = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+        model_name='gpt-4o',
+        chunk_size=1234,
+        chunk_overlap=0,
+    ).split_text(txt)
+    num_chunks_to_remove = math.ceil(len(chunks) * ((len(txt) - max_length)) / len(txt))
+    chunk_idxs_to_remove = random.sample(range(1, len(chunks) - 1), num_chunks_to_remove)
+    remaining_chunks = [chunk for idx, chunk in enumerate(chunks) if idx not in chunk_idxs_to_remove]
+    short_text = '\n\n...\n\n'.join(remaining_chunks)
+    return short_text
+
 class TextSummary(BaseModel):
     title: str = Field(..., description="Title (includes original title and author if available).")
     short_summary: str = Field(..., description="Short summary (1-2 sentences) of the text.")
@@ -36,7 +51,7 @@ def summarize_text(openai_api_key, model, txt):
         model,
         TextSummary,
         'Read the user-provided text and summarize it with a title, short summary, and up to 23 bullet points.',
-        txt
+        fit_text(txt),
     )
 
 def get_chunks(txt):
