@@ -48,6 +48,15 @@ This app uses AI to generate flashcards from a piece of text.
 Enjoy!
 """
 
+def PersistentInput(**kwargs):
+    kwargs['hx_on_input'] = 'persistentInputOnInput(this)'
+    return (
+        Input(**kwargs),
+        Script(f"""
+        window.addEventListener('load', () => persistentInputOnLoad('{kwargs["id"]}'));
+        """),
+    )
+
 @app.get("/")
 def home():
     return Title('MkFlashcards'), Form(
@@ -56,7 +65,7 @@ def home():
             Grid(
                 Div(
                     B('OPENAI_API_KEY'),
-                    Input(name='openai_api_key', type='password', value=os.getenv('OPENAI_API_KEY', ''), id='openai_api_key'),
+                    PersistentInput(name='openai_api_key', type='password', value=os.getenv('OPENAI_API_KEY', ''), id='openai_api_key'),
                 ),
                 Div(
                     B('Model'),
@@ -70,7 +79,7 @@ def home():
             Grid(
                 Div(
                     B('JINA_API_KEY'),
-                    Input(name='jina_api_key', type='password', value=os.getenv('JINA_API_KEY', ''), id='jina_api_key'),
+                    PersistentInput(name='jina_api_key', type='password', value=os.getenv('JINA_API_KEY', ''), id='jina_api_key'),
                 ),
                 Div(
                     B('URL'),
@@ -83,7 +92,7 @@ def home():
             ),
             Div(
                 B('Text'),
-                Textarea(name='text', rows=7, id='text', style='font-family: monospace'),
+                Textarea(name='text', rows=7, id='text', style='font-family: monospace', hx_on_change='textOnChange()'),
             ),
             Grid(
                 Div(
@@ -102,7 +111,7 @@ def home():
             Div(
                 B('Flashcards'),
                 Textarea(name='flashcards', rows=13, id='flashcards', style='font-family: monospace'),
-                Button('Download', id='download'),
+                Button('Download', id='download', hx_on_click='downloadOnClick(event)'),
             ),
         ),
     )
