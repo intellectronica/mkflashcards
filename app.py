@@ -10,11 +10,11 @@ app, rt = fast_app(
 )
 
 @app.post('/-/fetch-text')
-async def do_fetch_text(jina_api_key: str, url: str, *args, **kwargs):
+async def do_fetch_text(jina_api_key: str, url: str, request):
     return fetch_text(url, jina_api_key)
 
 @app.post('/-/generate-flashcards')
-async def do_generate_flashcards(openai_api_key: str, model: str, num_flashcards: int, tags: str, text: str, *args, **kwargs):
+async def do_generate_flashcards(openai_api_key: str, model: str, num_flashcards: int, tags: str, text: str, request):
     tags_lst = None if tags.strip() == '' else [tag.strip() for tag in tags.split(' ')]
     flashcard_mds = []
     flashcards= get_flashcards(openai_api_key, model, text, num_flashcards)
