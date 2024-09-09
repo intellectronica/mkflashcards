@@ -92,7 +92,7 @@ def home():
             ),
             Div(
                 B('Text'),
-                Textarea(name='text', rows=7, id='text', style='font-family: monospace', hx_on_change='textOnChange()', **{'hx-on::after-swap': 'textOnChange()'}),
+                Textarea(name='text', rows=7, id='text', style='font-family: monospace', hx_on_change='textOnChange()', hx_on__after_swap='textOnChange()'),
             ),
             Grid(
                 Div(
