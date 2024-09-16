@@ -1,7 +1,0 @@
-openai
-pydantic
-tiktoken
-langchain-text-splitters
-requests
-python-fasthtml
-markdown
