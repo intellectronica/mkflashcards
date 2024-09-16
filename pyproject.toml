@@ -1,0 +1,15 @@
+[project]
+name = "mkflashcards"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "langchain-text-splitters>=0.3.0",
+    "markdown>=3.7",
+    "openai>=1.45.1",
+    "pydantic>=2.9.1",
+    "python-fasthtml>=0.6.0",
+    "requests>=2.32.3",
+    "tiktoken>=0.7.0",
+]
