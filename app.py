@@ -63,29 +63,27 @@ def home():
     return Title('MkFlashcards'), Form(
         Container(
             Card(NotStr(markdown(ABOUT))),
-            Grid(
-                Div(
-                    B('OPENAI_API_KEY'),
-                    PersistentInput(name='openai_api_key', type='password', value=os.getenv('OPENAI_API_KEY', ''), id='openai_api_key'),
-                    cls='llm-api-key llm-api-key-openai',
+            Div(
+                B('Model'),
+                Select(
+                    Option('gpt-4o-mini', selected=True),
+                    Option('gpt-4o-2024-08-06'),
+                    Option('gemini-1.5-flash-exp-0827'),
+                    Option('gemini-1.5-pro-exp-0827'),
+                    name='model', id='model',
+                    hx_on_change='modelOnChange()'
                 ),
-                Div(
-                    B('GOOGLE_API_KEY'),
-                    PersistentInput(name='google_api_key', type='password', value=os.getenv('GOOGLE_API_KEY', ''), id='google_api_key'),
-                    cls='llm-api-key llm-api-key-google',
-                    style='display: none',
-                ),
-                Div(
-                    B('Model'),
-                    Select(
-                        Option('gpt-4o-mini', selected=True),
-                        Option('gpt-4o-2024-08-06'),
-                        Option('gemini-1.5-flash-exp-0827'),
-                        Option('gemini-1.5-pro-exp-0827'),
-                        name='model', id='model',
-                        hx_on_change='modelOnChange()'
-                    ),
-                ),
+            ),
+            Div(
+                B('OPENAI_API_KEY'),
+                PersistentInput(name='openai_api_key', type='password', value=os.getenv('OPENAI_API_KEY', ''), id='openai_api_key'),
+                cls='llm-api-key llm-api-key-openai',
+            ),
+            Div(
+                B('GOOGLE_API_KEY'),
+                PersistentInput(name='google_api_key', type='password', value=os.getenv('GOOGLE_API_KEY', ''), id='google_api_key'),
+                cls='llm-api-key llm-api-key-google',
+                style='display: none',
             ),
             Grid(
                 Div(
