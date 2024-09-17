@@ -1,4 +1,3 @@
-from openai import OpenAI
 from pydantic import BaseModel, Field
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import instructor
@@ -7,24 +6,38 @@ import json
 import requests
 import math
 import random
+from functools import partial
 
-def llm(openai_api_key: str,
+def get_llm_api_func(model, api_key):
+    if model.startswith('gpt'):
+        from openai import OpenAI
+        return partial(instructor.from_openai(
+            client=OpenAI(api_key=api_key),
+            mode=instructor.Mode.TOOLS_STRICT,
+        ).chat.completions.create, model=model)
+    elif model.startswith('gemini'):
+        import google.generativeai as genai
+        genai.configure(api_key=api_key)
+        return instructor.from_gemini(
+            client=genai.GenerativeModel(model),
+            mode=instructor.Mode.GEMINI_JSON,
+        ).messages.create
+    else:
+        raise ValueError(f'Unknown model: {model}')
+
+def llm(api_key: str,
         model: str,
         response_model: BaseModel = BaseModel,
         system: str = None, user: str = None,
         **kwargs):
-    oaix = instructor.from_openai(
-        OpenAI(api_key=openai_api_key),
-        mode=instructor.Mode.TOOLS_STRICT,
-    )
+    ai_func = get_llm_api_func(model, api_key)
     messages = []
     if system:
         messages.append({"role": "system", "content": system})
     if user:
         messages.append({"role": "user", "content": user})
-    return oaix.chat.completions.create(
+    return ai_func(
         response_model=response_model,
-        model=model,
         messages=messages,
         **kwargs,
     )
@@ -48,9 +61,9 @@ class TextSummary(BaseModel):
     short_summary: str = Field(..., description="Short summary (1-2 sentences) of the text.")
     bullet_points: list[str] = Field(..., description="Summary of the text in up to 23 bullet points.")
 
-def summarize_text(openai_api_key, model, txt):
+def summarize_text(api_key, model, txt):
     return llm(
-        openai_api_key,
+        api_key,
         model,
         TextSummary,
         'Read the user-provided text and summarize it with a title, short summary, and up to 23 bullet points.',
@@ -83,9 +96,9 @@ class Flashcard(BaseModel):
 class FlashcardSet(BaseModel):
     flashcards: list[Flashcard]
 
-def get_flashcards(openai_api_key, model, txt, num_flashcards):
+def get_flashcards(api_key, model, txt, num_flashcards):
     flashcard_infos = []
-    context = summarize_text(openai_api_key, model, txt).dict()
+    context = summarize_text(api_key, model, txt).dict()
     chunks = get_chunks(txt)
     flashcards_per_chunk = round(num_flashcards / len(chunks))
 
@@ -108,7 +121,7 @@ def get_flashcards(openai_api_key, model, txt, num_flashcards):
         user_input = { 'context': context, 'chunk': chunk }
 
         flashcard_infos += llm(
-            openai_api_key,
+            api_key,
             model,
             FlashcardSet,
             system,

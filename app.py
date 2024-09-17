@@ -14,10 +14,11 @@ async def do_fetch_text(jina_api_key: str, url: str, request):
     return fetch_text(url, jina_api_key)
 
 @app.post('/-/generate-flashcards')
-async def do_generate_flashcards(openai_api_key: str, model: str, num_flashcards: int, tags: str, text: str, request):
+async def do_generate_flashcards(openai_api_key: str, google_api_key: str, model: str, num_flashcards: int, tags: str, text: str, request):
     tags_lst = None if tags.strip() == '' else [tag.strip() for tag in tags.split(' ')]
     flashcard_mds = []
-    flashcards= get_flashcards(openai_api_key, model, text, num_flashcards)
+    api_key = openai_api_key if model.startswith('gpt') else google_api_key if model.startswith('gemini') else None
+    flashcards= get_flashcards(api_key, model, text, num_flashcards)
     for flashcard in flashcards:
         flashcard_md = f'### {flashcard.front.strip()}\n---\n{flashcard.back.strip()}\n\n> {flashcard.quote.strip()}'
         if tags_lst is not None:
@@ -66,13 +67,23 @@ def home():
                 Div(
                     B('OPENAI_API_KEY'),
                     PersistentInput(name='openai_api_key', type='password', value=os.getenv('OPENAI_API_KEY', ''), id='openai_api_key'),
+                    cls='llm-api-key llm-api-key-openai',
+                ),
+                Div(
+                    B('GOOGLE_API_KEY'),
+                    PersistentInput(name='google_api_key', type='password', value=os.getenv('GOOGLE_API_KEY', ''), id='google_api_key'),
+                    cls='llm-api-key llm-api-key-google',
+                    style='display: none',
                 ),
                 Div(
                     B('Model'),
                     Select(
                         Option('gpt-4o-mini', selected=True),
                         Option('gpt-4o-2024-08-06'),
+                        Option('gemini-1.5-flash-exp-0827'),
+                        Option('gemini-1.5-pro-exp-0827'),
                         name='model', id='model',
+                        hx_on_change='modelOnChange()'
                     ),
                 ),
             ),

@@ -27,3 +27,11 @@ function downloadOnClick(event) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
+function modelOnChange() {
+  const model = document.getElementById('model').value;
+  const provider = model.startsWith('gpt') ? 'openai' : model.startsWith('gemini') ? 'google' : null;
+  for (const element of document.getElementsByClassName('llm-api-key')) {
+    element.style.display = element.classList.contains('llm-api-key-' + provider) ? 'block' : 'none';
+  }
+}
