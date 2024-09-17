@@ -1,6 +1,7 @@
 from openai import OpenAI
 from pydantic import BaseModel, Field
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+import instructor
 from textwrap import dedent
 import json
 import requests
@@ -12,19 +13,21 @@ def llm(openai_api_key: str,
         response_model: BaseModel = BaseModel,
         system: str = None, user: str = None,
         **kwargs):
-    oai = OpenAI(api_key=openai_api_key)
+    oaix = instructor.from_openai(
+        OpenAI(api_key=openai_api_key),
+        mode=instructor.Mode.TOOLS_STRICT,
+    )
     messages = []
     if system:
         messages.append({"role": "system", "content": system})
     if user:
         messages.append({"role": "user", "content": user})
-    result = oai.beta.chat.completions.parse(
+    return oaix.chat.completions.create(
+        response_model=response_model,
         model=model,
         messages=messages,
-        response_format=response_model,
         **kwargs,
     )
-    return result.choices[0].message.parsed
 
 def fit_text(txt, max_length=345678, chunk_size=1234):
     if len(txt) <= max_length:
