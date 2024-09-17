@@ -62,12 +62,13 @@ class TextSummary(BaseModel):
     bullet_points: list[str] = Field(..., description="Summary of the text in up to 23 bullet points.")
 
 def summarize_text(api_key, model, txt):
+    max_length = 678987 if model.startswith('gemini') else 345678
     return llm(
         api_key,
         model,
         TextSummary,
         'Read the user-provided text and summarize it with a title, short summary, and up to 23 bullet points.',
-        fit_text(txt),
+        fit_text(txt, max_length=max_length),
     )
 
 def get_chunks(txt):
