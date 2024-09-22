@@ -82,7 +82,7 @@ def home():
                         Option('gemini-1.5-flash-exp-0827'),
                         Option('gemini-1.5-pro-exp-0827'),
                         name='model', id='model',
-                        hx_get='/~/api-key-div?model=${value}',
+                        hx_get='/~/api-key-div',
                         hx_trigger='change',
                         hx_target='#api_key_div',
                     ),
