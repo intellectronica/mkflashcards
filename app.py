@@ -13,6 +13,9 @@ app, rt = fast_app(
 async def do_fetch_text(jina_api_key: str, url: str, request):
     return fetch_text(url, jina_api_key)
 
+def md_quote(txt):
+    return '\n'.join([f'> {line}' for line in txt.splitlines()])
+
 @app.post('/-/generate-flashcards')
 async def do_generate_flashcards(model: str, num_flashcards: int, tags: str, text: str, request):
     tags_lst = None if tags.strip() == '' else [tag.strip() for tag in tags.split(' ')]
@@ -21,7 +24,7 @@ async def do_generate_flashcards(model: str, num_flashcards: int, tags: str, tex
     api_key = form['openai_api_key'] if model.startswith('gpt') else form['google_api_key'] if model.startswith('gemini') else None
     flashcards= get_flashcards(api_key, model, text, num_flashcards)
     for flashcard in flashcards:
-        flashcard_md = f'### {flashcard.front.strip()}\n---\n{flashcard.back.strip()}\n\n> {flashcard.quote.strip()}'
+        flashcard_md = f'### {flashcard.front.strip()}\n---\n{flashcard.back.strip()}\n\n {md_quote(flashcard.quote.strip())}'
         if tags_lst is not None:
             flashcard_md += f"\n\n{' '.join(['#' + tag for tag in tags_lst])}"
         flashcard_mds.append(flashcard_md.strip())
