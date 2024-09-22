@@ -101,7 +101,7 @@ def get_flashcards(api_key, model, txt, num_flashcards):
     flashcard_infos = []
     context = summarize_text(api_key, model, txt).dict()
     chunks = get_chunks(txt)
-    flashcards_per_chunk = round(num_flashcards / len(chunks))
+    flashcards_per_chunk = math.ceil(num_flashcards / len(chunks))
 
     for chunk in chunks:
         system = dedent(f"""
