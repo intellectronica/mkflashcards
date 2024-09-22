@@ -1,7 +1,10 @@
 import os
+import tempfile
 
 from fasthtml.common import *
+from fastcore.parallel import threaded
 from markdown import markdown
+import hashlib
 
 from mkflashcards import *
 
@@ -16,19 +19,44 @@ async def do_fetch_text(jina_api_key: str, url: str, request):
 def md_quote(txt):
     return '\n'.join([f'> {line}' for line in txt.splitlines()])
 
-@app.post('/-/generate-flashcards')
-async def do_generate_flashcards(model: str, num_flashcards: int, tags: str, text: str, request):
-    tags_lst = None if tags.strip() == '' else [tag.strip() for tag in tags.split(' ')]
+def get_task_tempfile_path(task_id):
+    return os.path.join(tempfile.gettempdir(), f'{task_id}.md')
+
+@threaded
+def generate_flashcards_task(api_key, model, text, num_flashcards, tags, task_id):
+    flashcards = get_flashcards(api_key, model, text, num_flashcards)
     flashcard_mds = []
-    form = await request.form()
-    api_key = form['openai_api_key'] if model.startswith('gpt') else form['google_api_key'] if model.startswith('gemini') else None
-    flashcards= get_flashcards(api_key, model, text, num_flashcards)
     for flashcard in flashcards:
         flashcard_md = f'### {flashcard.front.strip()}\n---\n{flashcard.back.strip()}\n\n {md_quote(flashcard.quote.strip())}'
-        if tags_lst is not None:
-            flashcard_md += f"\n\n{' '.join(['#' + tag for tag in tags_lst])}"
+        if tags is not None:
+            flashcard_md += f"\n\n{' '.join(['#' + tag for tag in tags])}"
         flashcard_mds.append(flashcard_md.strip())
-    return '\n===\n'.join(flashcard_mds)
+    flashcards_md = '\n===\n'.join(flashcard_mds)
+    with open(get_task_tempfile_path(task_id), 'w') as file:
+        file.write(flashcards_md)
+
+@app.post('/-/generate-flashcards/{task_id}')
+async def do_generate_flashcards(model: str, num_flashcards: int, tags: str, text: str, task_id: str = '', request = None):
+    if task_id == '':
+        task_id = hashlib.md5(text.encode()).hexdigest()
+        form = await request.form()
+        api_key = form['openai_api_key'] if model.startswith('gpt') else form['google_api_key'] if model.startswith('gemini') else None
+        generate_flashcards_task(api_key, model, text, num_flashcards, tags.split(), task_id)
+
+    flashcards_md = None
+    if os.path.exists(get_task_tempfile_path(task_id)):
+        with open(get_task_tempfile_path(task_id), 'r') as file:
+            flashcards_md = file.read()
+        os.remove(get_task_tempfile_path(task_id))
+    if flashcards_md is None:
+        return Textarea(
+            f'Generating flashcards ({task_id})...',
+            name='flashcards', rows=13, id='flashcards', style='font-family: monospace',
+            hx_post=f'/-/generate-flashcards/{task_id}',
+            hx_trigger='every 1s', hx_swap='outerHTML',
+        )
+    else:
+        return Textarea(flashcards_md, name='flashcards', rows=13, id='flashcards', style='font-family: monospace'),
 
 ABOUT = """
 # Make Flashcards, automagically, with AI!
@@ -120,7 +148,7 @@ def home():
                 ),
                 Div(
                     Img(src='/spinner.svg', cls='htmx-indicator', id='generate_spinner'),
-                    Button('Generate Flashcards', hx_post='/-/generate-flashcards', hx_target='#flashcards', hx_swap='innerHTML', hx_indicator='#generate_spinner'),
+                    Button('Generate Flashcards', hx_post='/-/generate-flashcards/', hx_target='#flashcards', hx_swap='outerHTML', hx_indicator='#generate_spinner'),
                 ),
             ),
             Div(
