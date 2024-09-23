@@ -7,12 +7,14 @@ import requests
 import math
 import random
 from functools import partial
+import asyncio
+import itertools
 
 def get_llm_api_func(model, api_key):
     if model.startswith('gpt'):
-        from openai import OpenAI
+        from openai import AsyncOpenAI
         return partial(instructor.from_openai(
-            client=OpenAI(api_key=api_key),
+            client=AsyncOpenAI(api_key=api_key),
             mode=instructor.Mode.TOOLS_STRICT,
         ).chat.completions.create, model=model)
     elif model.startswith('gemini'):
@@ -21,6 +23,7 @@ def get_llm_api_func(model, api_key):
         return instructor.from_gemini(
             client=genai.GenerativeModel(model),
             mode=instructor.Mode.GEMINI_JSON,
+            use_async=True,
         ).messages.create
     else:
         raise ValueError(f'Unknown model: {model}')
@@ -61,9 +64,9 @@ class TextSummary(BaseModel):
     short_summary: str = Field(..., description="Short summary (1-2 sentences) of the text.")
     bullet_points: list[str] = Field(..., description="Summary of the text in up to 23 bullet points.")
 
-def summarize_text(api_key, model, txt):
+async def summarize_text(api_key, model, txt):
     max_length = 678987 if model.startswith('gemini') else 345678
-    return llm(
+    return await llm(
         api_key,
         model,
         TextSummary,
@@ -97,38 +100,40 @@ class Flashcard(BaseModel):
 class FlashcardSet(BaseModel):
     flashcards: list[Flashcard]
 
-def get_flashcards(api_key, model, txt, num_flashcards):
-    flashcard_infos = []
-    context = summarize_text(api_key, model, txt).dict()
+async def get_chunk_flashcards(api_key, model, context, chunk, system):
+    user_input = { 'context': context, 'chunk': chunk }
+    return (await llm(
+        api_key,
+        model,
+        FlashcardSet,
+        system,
+        json.dumps(user_input),
+    )).flashcards
+
+async def get_flashcards(api_key, model, txt, num_flashcards):
+    context = (await summarize_text(api_key, model, txt)).dict()
     chunks = get_chunks(txt)
     flashcards_per_chunk = math.ceil(num_flashcards / len(chunks))
 
-    for chunk in chunks:
-        system = dedent(f"""
-        You are an expert tutor and flashcards creator.
-        You help the user remember the most important
-        information from the text by creating flashcards.
-        The text in the flashcards should be concise and authoritative.
-        Don't use phrases like "according to the author" or "in the artice"
-        or "according to the text", just present the information as if it were a fact.
-        The user-provided input includes `context`, with information about the document
-        and a summary of the entire document in bullet points, and `chunk`,
-        a part of the text to focus on when creating the flashcards.
-        Read the user-provided input carefully and generate
-        {flashcards_per_chunk} flashcards.
-        IMPORTANT: IT IS CRUCIAL THAT YOU FOLLOW THE INSTRUCTIONS ABOVE EXACTLY.
-        """).strip()
+    system = dedent(f"""
+    You are an expert tutor and flashcards creator.
+    You help the user remember the most important
+    information from the text by creating flashcards.
+    The text in the flashcards should be concise and authoritative.
+    Don't use phrases like "according to the author" or "in the artice"
+    or "according to the text", just present the information as if it were a fact.
+    The user-provided input includes `context`, with information about the document
+    and a summary of the entire document in bullet points, and `chunk`,
+    a part of the text to focus on when creating the flashcards.
+    Read the user-provided input carefully and generate
+    {flashcards_per_chunk} flashcards.
+    IMPORTANT: IT IS CRUCIAL THAT YOU FOLLOW THE INSTRUCTIONS ABOVE EXACTLY.
+    """).strip()
 
-        user_input = { 'context': context, 'chunk': chunk }
+    tasks = [get_chunk_flashcards(api_key, model, context, chunk, system) for chunk in chunks]
+    results = await asyncio.gather(*tasks)
+    flashcard_infos = list(itertools.chain(*results))
 
-        flashcard_infos += llm(
-            api_key,
-            model,
-            FlashcardSet,
-            system,
-            json.dumps(user_input),
-        ).flashcards
-    
     return flashcard_infos
 
 def fetch_text(url, jina_api_key):

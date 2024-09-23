@@ -1,8 +1,8 @@
 import os
 import tempfile
+import asyncio
 
 from fasthtml.common import *
-from fastcore.parallel import threaded
 from markdown import markdown
 import hashlib
 
@@ -22,9 +22,8 @@ def md_quote(txt):
 def get_task_tempfile_path(task_id):
     return os.path.join(tempfile.gettempdir(), f'{task_id}.md')
 
-@threaded
-def generate_flashcards_task(api_key, model, text, num_flashcards, tags, task_id):
-    flashcards = get_flashcards(api_key, model, text, num_flashcards)
+async def generate_flashcards_task(api_key, model, text, num_flashcards, tags, task_id):
+    flashcards = await get_flashcards(api_key, model, text, num_flashcards)
     flashcard_mds = []
     for flashcard in flashcards:
         flashcard_md = f'### {flashcard.front.strip()}\n---\n{flashcard.back.strip()}\n\n {md_quote(flashcard.quote.strip())}'
@@ -41,7 +40,7 @@ async def do_generate_flashcards(model: str, num_flashcards: int, tags: str, tex
         task_id = hashlib.md5(text.encode()).hexdigest()
         form = await request.form()
         api_key = form['openai_api_key'] if model.startswith('gpt') else form['google_api_key'] if model.startswith('gemini') else None
-        generate_flashcards_task(api_key, model, text, num_flashcards, tags.split(), task_id)
+        asyncio.create_task(generate_flashcards_task(api_key, model, text, num_flashcards, tags.split(), task_id))
 
     flashcards_md = None
     if os.path.exists(get_task_tempfile_path(task_id)):
