@@ -109,6 +109,7 @@ def home():
                     Select(
                         Option('gpt-4o-mini', selected=True),
                         Option('gpt-4o'),
+                        Option('gemini-1.5-flash-8b'),
                         Option('gemini-1.5-flash-002'),
                         Option('gemini-1.5-pro-002'),
                         name='model', id='model',
