@@ -108,9 +108,9 @@ def home():
                     B('Model'),
                     Select(
                         Option('gpt-4o-mini', selected=True),
-                        Option('gpt-4o-2024-08-06'),
-                        Option('gemini-1.5-flash-exp-0827'),
-                        Option('gemini-1.5-pro-exp-0827'),
+                        Option('gpt-4o'),
+                        Option('gemini-1.5-flash-002'),
+                        Option('gemini-1.5-pro-002'),
                         name='model', id='model',
                         hx_get='/~/api-key-div',
                         hx_trigger='change',
