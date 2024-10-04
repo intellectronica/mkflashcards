@@ -5,13 +5,13 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "google-generativeai>=0.8.1",
-    "instructor>=1.4.2",
+    "google-generativeai>=0.8.2",
+    "instructor>=1.5.0",
     "langchain-text-splitters>=0.3.0",
     "markdown>=3.7",
-    "openai>=1.45.1",
-    "pydantic>=2.9.1",
-    "python-fasthtml>=0.6.0",
+    "openai>=1.51.0",
+    "pydantic>=2.9.2",
+    "python-fasthtml>=0.6.9",
     "requests>=2.32.3",
-    "tiktoken>=0.7.0",
+    "tiktoken>=0.8.0",
 ]
