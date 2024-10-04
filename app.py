@@ -12,6 +12,12 @@ app, rt = fast_app(
     hdrs=[Script(src='/app.js'), Style(src='/app.css')],
 )
 
+if os.getenv('LOGFIRE_TOKEN') is not None:
+    import logfire
+    logfire.configure()
+    logfire.instrument_requests()
+    logfire.instrument_starlette(app)
+
 @app.post('/-/fetch-text')
 async def do_fetch_text(jina_api_key: str, url: str, request):
     return fetch_text(url, jina_api_key)

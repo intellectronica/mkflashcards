@@ -8,6 +8,7 @@ dependencies = [
     "google-generativeai>=0.8.2",
     "instructor>=1.5.0",
     "langchain-text-splitters>=0.3.0",
+    "logfire[openai,requests,starlette]>=1.0.1",
     "markdown>=3.7",
     "openai>=1.51.0",
     "pydantic>=2.9.2",

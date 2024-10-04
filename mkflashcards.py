@@ -9,12 +9,17 @@ import random
 from functools import partial
 import asyncio
 import itertools
+import os
 
 def get_llm_api_func(model, api_key):
     if model.startswith('gpt'):
         from openai import AsyncOpenAI
+        aoai = AsyncOpenAI(api_key=api_key)
+        if os.getenv('LOGFIRE_TOKEN') is not None:
+            import logfire
+            logfire.instrument_openai(aoai)
         return partial(instructor.from_openai(
-            client=AsyncOpenAI(api_key=api_key),
+            client=aoai,
             mode=instructor.Mode.TOOLS_STRICT,
         ).chat.completions.create, model=model)
     elif model.startswith('gemini'):
