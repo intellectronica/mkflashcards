@@ -67,8 +67,7 @@ def fit_text(txt, max_length=345678, chunk_size=1234):
 
 class TextSummary(BaseModel):
     title: str = Field(..., description="Title (includes original title and author if available).")
-    short_summary: str = Field(..., description="Short summary (1-2 sentences) of the text.")
-    bullet_points: list[str] = Field(..., description="Summary of the text in up to 123 bullet points.")
+    summary: str = Field(..., description="One-pager summary of the text.")
 
 async def summarize_text(api_key, model, txt):
     max_length = 678987 if model.startswith('gemini') else 345678
@@ -76,16 +75,15 @@ async def summarize_text(api_key, model, txt):
         api_key,
         model,
         TextSummary,
-        'Read the user-provided text and summarize it with a title, short summary, and up to 123 bullet points.',
+        'Read the user-provided text and summarize it with a title and a one-pager summary.',
         fit_text(txt, max_length=max_length),
     )
     summary = dedent(f"""
     <context>
       <title>{result.title}</title>
-      <short_summary>{result.short_summary}</short_summary>
-      <bullet_points>
-        {"\n".join([" - " + bp for bp in result.bullet_points])}
-      </bullet_points>
+      <summary>
+        {result.summary}
+      </short_summary>
     </context>        
     """).strip()
     return summary
@@ -109,8 +107,8 @@ class Flashcard(BaseModel):
         'information easier to remember. Formatted as Markdown.'
     ))
     quote: str = Field(..., description=(
-        'Quote from the text that the flashcard is based on. '
-        'Include a short (2-3 sentences) verbarim excerpt from the text that the flashcard is based on.'
+        'Quote from the chunk that the flashcard is based on. '
+        'Include a short (2-3 sentences) verbarim excerpt from the chunk that the flashcard is based on.'
     ))
 
 class FlashcardSet(BaseModel):
