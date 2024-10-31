@@ -19,8 +19,12 @@ if os.getenv('LOGFIRE_TOKEN') is not None:
     logfire.instrument_starlette(app)
 
 @app.post('/-/fetch-text')
-async def do_fetch_text(jina_api_key: str, url: str, request):
-    return fetch_text(url, jina_api_key)
+async def do_fetch_text(request, jina_api_key: str, url: str, content: UploadFile):
+    return fetch_text(
+        jina_api_key,
+        url=(len(url.strip()) > 0 and url or None),
+        content=content.filename and (await content.read()).decode('utf-8') or None,
+    )
 
 def md_quote(txt):
     return '\n'.join([f'> {line}' for line in txt.splitlines()])
@@ -135,6 +139,10 @@ def home():
                     Input(name='url', type='text', id='url'),
                 ),
                 Div(
+                    B('File'),
+                    Input(name='content', type='file', multiple=False, required=False, id='content'),
+                ),
+                Div(
                     Img(src='/spinner.svg', cls='htmx-indicator', id='fetch_spinner'),
                     Button('Fetch Text', hx_post='/-/fetch-text', hx_target='#text', hx_swap='innerHTML', hx_indicator='#fetch_spinner'),
                 )
@@ -163,6 +171,7 @@ def home():
                 Button('Download', id='download', hx_on_click='downloadOnClick(event)'),
             ),
         ),
+        hx_encoding='multipart/form-data',
     )
 
 serve()

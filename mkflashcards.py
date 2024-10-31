@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import instructor
+from bs4 import BeautifulSoup
 from textwrap import dedent
 import json
 import requests
@@ -166,9 +167,47 @@ async def get_flashcards(api_key, model, txt, num_flashcards):
 
     return flashcard_infos
 
-def fetch_text(url, jina_api_key):
-    return requests.get(
-        f'https://r.jina.ai/{url}',
-        headers={'Authorization': f'Bearer {jina_api_key}'}
-    ).text
+def fix_html(input_html):
+    soup = BeautifulSoup(input_html, 'html.parser')
+    if not soup.html:
+        html_tag = soup.new_tag('html')
+        html_tag.contents = soup.contents
+        soup = BeautifulSoup(str(html_tag), 'html.parser')
+    if not soup.html:
+        html_tag = soup.new_tag('html')
+        html_tag.append(*soup.contents)
+        soup.append(html_tag)
+    if not soup.head:
+        head_tag = soup.new_tag('head')
+        soup.html.insert(0, head_tag)
+    if not soup.body:
+        body_tag = soup.new_tag('body')
+        for element in list(soup.html.contents):
+            if element != soup.head:
+                body_tag.append(element.extract())
+        soup.html.append(body_tag)
+    for element in list(soup.contents):
+        if element != soup.html:
+            soup.html.body.append(element.extract())
+    formatted_html = soup.prettify()
+    return formatted_html
 
+def fetch_text(jina_api_key, url=None, content=None):
+    if url:
+        return requests.get(
+            f'https://r.jina.ai/{url}',
+            headers={'Authorization': f'Bearer {jina_api_key}'}
+        ).text
+    elif content:
+        print(fix_html(content)[:1234]) 
+        return requests.post(
+            f'https://r.jina.ai/',
+            headers={
+                'Authorization': f'Bearer {jina_api_key}',
+                'Content-Type': 'application/json',
+            },
+            json={
+                'url': 'http://example.com/',
+                'html': fix_html(content),
+            },
+        ).text
