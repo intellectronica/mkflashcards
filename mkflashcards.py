@@ -67,17 +67,27 @@ def fit_text(txt, max_length=345678, chunk_size=1234):
 class TextSummary(BaseModel):
     title: str = Field(..., description="Title (includes original title and author if available).")
     short_summary: str = Field(..., description="Short summary (1-2 sentences) of the text.")
-    bullet_points: list[str] = Field(..., description="Summary of the text in up to 23 bullet points.")
+    bullet_points: list[str] = Field(..., description="Summary of the text in up to 123 bullet points.")
 
 async def summarize_text(api_key, model, txt):
     max_length = 678987 if model.startswith('gemini') else 345678
-    return await llm(
+    result = await llm(
         api_key,
         model,
         TextSummary,
-        'Read the user-provided text and summarize it with a title, short summary, and up to 23 bullet points.',
+        'Read the user-provided text and summarize it with a title, short summary, and up to 123 bullet points.',
         fit_text(txt, max_length=max_length),
     )
+    summary = dedent(f"""
+    <context>
+      <title>{result.title}</title>
+      <short_summary>{result.short_summary}</short_summary>
+      <bullet_points>
+        {"\n".join([" - " + bp for bp in result.bullet_points])}
+      </bullet_points>
+    </context>        
+    """).strip()
+    return summary
 
 def get_chunks(txt):
     text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
@@ -105,37 +115,52 @@ class Flashcard(BaseModel):
 class FlashcardSet(BaseModel):
     flashcards: list[Flashcard]
 
-async def get_chunk_flashcards(api_key, model, context, chunk, system):
-    user_input = { 'context': context, 'chunk': chunk }
+async def get_chunk_flashcards(api_key, model, summary, chunk, system):
+    prompt = f'{summary}\n<chunk>\n{chunk}\n</chunk>\n\n{system}'
     return (await llm(
         api_key,
         model,
         FlashcardSet,
-        system,
-        json.dumps(user_input),
+        user=prompt,
     )).flashcards
 
 async def get_flashcards(api_key, model, txt, num_flashcards):
-    context = (await summarize_text(api_key, model, txt)).dict()
+    summary = await summarize_text(api_key, model, txt)
     chunks = get_chunks(txt)
     flashcards_per_chunk = math.ceil(num_flashcards / len(chunks))
 
     system = dedent(f"""
-    You are an expert tutor and flashcards creator.
-    You help the user remember the most important
+    You are an expert tutor and flashcards creator. \
+    You help the user remember the most important \
     information from the text by creating flashcards.
-    The text in the flashcards should be concise and authoritative.
-    Don't use phrases like "according to the author" or "in the artice"
+
+    The text in the flashcards should be concise and authoritative. \
+    Don't use phrases like "according to the author" or "in the artice" \
     or "according to the text", just present the information as if it were a fact.
-    The user-provided input includes `context`, with information about the document
-    and a summary of the entire document in bullet points, and `chunk`,
-    a part of the text to focus on when creating the flashcards.
-    Read the user-provided input carefully and generate
-    {flashcards_per_chunk} flashcards.
+    GOOD EXAMPLE: "What is the best way to peel a poptato?"
+    BAD EXAMPLES:
+        "According to the article, what is the best way to peel a potato?",
+        "What is Jamie Oliver's favorite way to peel a potato?"
+        "How does the author suggest peeling a potato?"
+        "How does the book approach the question of potato peeling?"
+
+    The user-provided input above includes <context>...</context>, with \
+    information about the document and a summary of the entire document \
+    in bullet points, and <chunk>...</chunk>, a part of the document text \
+    to focus on when creating the flashcards.
+
+    Start by reviewing the context. Then, read the chunk carefully and \
+    generate {flashcards_per_chunk} flashcards based on the contents of \
+    the chunk.
+    
+    ONLY USE THE CONTENTS OF THE CHUNK FOR THE FLASHCARDS AND QUOTES.
+    NEVER RELY ON TEXT FROM THE SUMMARY FOR THE FOCUS OF THE FLASHCARDS \
+    OR THE QUOTES.
+
     IMPORTANT: IT IS CRUCIAL THAT YOU FOLLOW THE INSTRUCTIONS ABOVE EXACTLY.
     """).strip()
 
-    tasks = [get_chunk_flashcards(api_key, model, context, chunk, system) for chunk in chunks]
+    tasks = [get_chunk_flashcards(api_key, model, summary, chunk, system) for chunk in chunks]
     results = await asyncio.gather(*tasks)
     flashcard_infos = list(itertools.chain(*results))
 

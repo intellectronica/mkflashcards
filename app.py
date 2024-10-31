@@ -32,7 +32,7 @@ async def generate_flashcards_task(api_key, model, text, num_flashcards, tags, t
     flashcards = await get_flashcards(api_key, model, text, num_flashcards)
     flashcard_mds = []
     for flashcard in flashcards:
-        flashcard_md = f'### {flashcard.front.strip()}\n---\n{flashcard.back.strip()}\n\n {md_quote(flashcard.quote.strip())}'
+        flashcard_md = f'### {flashcard.front.strip()}\n---\n{flashcard.back.strip()}\n\n{md_quote(flashcard.quote.strip())}'
         if tags is not None:
             flashcard_md += f"\n\n{' '.join(['#' + tag for tag in tags])}"
         flashcard_mds.append(flashcard_md.strip())
