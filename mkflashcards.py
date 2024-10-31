@@ -83,7 +83,7 @@ async def summarize_text(api_key, model, txt):
       <title>{result.title}</title>
       <summary>
         {result.summary}
-      </short_summary>
+      </summary>
     </context>        
     """).strip()
     return summary
