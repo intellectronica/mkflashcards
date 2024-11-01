@@ -159,8 +159,10 @@ async def get_flashcards(api_key, model, txt, num_flashcards):
     IMPORTANT: IT IS CRUCIAL THAT YOU FOLLOW THE INSTRUCTIONS ABOVE EXACTLY.
     """).strip()
 
-    tasks = [get_chunk_flashcards(api_key, model, summary, chunk, system) for chunk in chunks]
-    results = await asyncio.gather(*tasks)
+    first_result = await get_chunk_flashcards(api_key, model, summary, chunks[0], system)
+    tasks = [get_chunk_flashcards(api_key, model, summary, chunk, system) for chunk in chunks[1:]]
+    other_results = await asyncio.gather(*tasks)
+    results = [first_result] + other_results
     flashcard_infos = list(itertools.chain(*results))
 
     return flashcard_infos
