@@ -1,6 +1,9 @@
 import os
 import tempfile
 import asyncio
+import base64
+import subprocess
+import tempfile
 
 from fasthtml.common import *
 from markdown import markdown
@@ -18,12 +21,55 @@ if os.getenv('LOGFIRE_TOKEN') is not None:
     logfire.instrument_requests()
     logfire.instrument_starlette(app)
 
+def epub_to_html(epub_bytes):
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.epub') as epub_file:
+        epub_file_path = epub_file.name
+        epub_file.write(epub_bytes)
+    
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.html') as html_file:
+        html_file_path = html_file.name
+
+    try:
+        subprocess.run(
+            ['pandoc', epub_file_path, '-t', 'html', '-o', html_file_path],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        
+        with open(html_file_path, 'r', encoding='utf-8') as file:
+            html_content = file.read()
+            
+    except subprocess.CalledProcessError as e:
+        print(f"Pandoc conversion failed: {e.stderr.decode('utf-8')}")
+        html_content = ""
+        
+    finally:
+        os.remove(epub_file_path)
+        os.remove(html_file_path)
+        
+    return html_content
+
 @app.post('/-/fetch-text')
 async def do_fetch_text(request, jina_api_key: str, url: str, content: UploadFile):
+    content_data, content_text, content_ext = None, None, None
+    if content.filename is not None:
+        content_data = await content.read()
+        content_ext = os.path.splitext(content.filename)[1].replace('.', '')    
+        if content_ext == 'pdf':
+            content_text = base64.b64encode(content_data).decode('utf-8')
+        elif content_ext == 'html':
+            content_text = content_data.decode('utf-8')
+        elif content_ext == 'epub':
+            content_text = epub_to_html(content_data)
+            content_ext = 'html'
+        else:
+            raise ValueError(f'Unsupported file type: {content_ext}')
     return fetch_text(
         jina_api_key,
         url=(len(url.strip()) > 0 and url or None),
-        content=content.filename and (await content.read()).decode('utf-8') or None,
+        content=content_text,
+        content_ext=content_ext,
     )
 
 def md_quote(txt):
@@ -139,7 +185,7 @@ def home():
                     Input(name='url', type='text', id='url'),
                 ),
                 Div(
-                    B('File'),
+                    B('File (html/pdf/epub)'),
                     Input(name='content', type='file', multiple=False, required=False, id='content'),
                 ),
                 Div(

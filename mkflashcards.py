@@ -190,22 +190,25 @@ def fix_html(input_html):
     formatted_html = soup.prettify()
     return formatted_html
 
-def fetch_text(jina_api_key, url=None, content=None):
+def fetch_text(jina_api_key, url=None, content=None, content_ext=None):
     if url:
         return requests.get(
             f'https://r.jina.ai/{url}',
             headers={'Authorization': f'Bearer {jina_api_key}'}
         ).text
     elif content:
-        print(fix_html(content)[:1234]) 
+        payload = { 'url': 'http://example.com/' }
+        if content_ext == 'pdf':
+            payload['pdf'] = content
+        elif content_ext == 'html':
+            payload['html'] = fix_html(content)
+        else:
+            raise ValueError(f'Unsupported content type: {content_ext}')
         return requests.post(
             f'https://r.jina.ai/',
             headers={
                 'Authorization': f'Bearer {jina_api_key}',
                 'Content-Type': 'application/json',
             },
-            json={
-                'url': 'http://example.com/',
-                'html': fix_html(content),
-            },
+            json=payload,
         ).text
