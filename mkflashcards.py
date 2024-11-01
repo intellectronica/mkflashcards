@@ -56,7 +56,7 @@ def fit_text(txt, max_length=345678, chunk_size=1234):
         return txt
     chunks = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
         model_name='gpt-4o',
-        chunk_size=1234,
+        chunk_size=345,
         chunk_overlap=0,
     ).split_text(txt)
     num_chunks_to_remove = math.ceil(len(chunks) * ((len(txt) - max_length)) / len(txt))
@@ -67,7 +67,7 @@ def fit_text(txt, max_length=345678, chunk_size=1234):
 
 class TextSummary(BaseModel):
     title: str = Field(..., description="Title (includes original title and author if available).")
-    summary: str = Field(..., description="One-pager summary of the text.")
+    summary: str = Field(..., description="One-pager summary of the text (roughly 500 tokens).")
 
 async def summarize_text(api_key, model, txt):
     max_length = 678987 if model.startswith('gemini') else 345678
@@ -91,8 +91,8 @@ async def summarize_text(api_key, model, txt):
 def get_chunks(txt):
     text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
         model_name='gpt-4o',
-        chunk_size=5000,
-        chunk_overlap=50,
+        chunk_size=3333,
+        chunk_overlap=333,
     )
     return text_splitter.split_text(txt)
 
