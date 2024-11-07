@@ -51,9 +51,9 @@ def epub_to_html(epub_bytes):
     return html_content
 
 @app.post('/-/fetch-text')
-async def do_fetch_text(request, jina_api_key: str, url: str, content: UploadFile):
+async def do_fetch_text(request, jina_api_key: str, url: str, content: UploadFile = None):
     content_data, content_text, content_ext = None, None, None
-    if content.filename is not None:
+    if content is not None and content.filename is not None:
         content_data = await content.read()
         content_ext = os.path.splitext(content.filename)[1].replace('.', '')    
         if content_ext == 'pdf':
