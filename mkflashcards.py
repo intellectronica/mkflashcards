@@ -159,8 +159,9 @@ async def get_flashcards(api_key, model, txt, num_flashcards):
     to focus on when creating the flashcards.
 
     Start by reviewing the context. Then, read the chunk carefully and \
-    generate {flashcards_per_chunk} flashcards based on the contents of \
-    the chunk.
+    generate EXACTLY {flashcards_per_chunk} FLASHCARDS based on the contents of \
+    the chunk. You must not generate more or fewer flashcards than the \
+    {flashcards_per_chunk} specified.
     
     ONLY USE THE CONTENTS OF THE CHUNK FOR THE FLASHCARDS AND QUOTES.
     NEVER RELY ON TEXT FROM THE SUMMARY FOR THE FOCUS OF THE FLASHCARDS \
