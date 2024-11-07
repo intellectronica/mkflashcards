@@ -95,7 +95,7 @@ async def do_generate_flashcards(model: str, num_flashcards: int, tags: str, tex
     if task_id == '':
         task_id = hashlib.md5(text.encode()).hexdigest()
         form = await request.form()
-        api_key = form['openai_api_key'] if model.startswith('gpt') else form['google_api_key'] if model.startswith('gemini') else None
+        api_key = form['openai_api_key'] if model.startswith('gpt') else form['google_api_key'] if model.startswith('gemini') else form['anthropic_api_key'] if model.startswith('claude') else None
         asyncio.create_task(generate_flashcards_task(api_key, model, text, num_flashcards, tags.split(), task_id))
 
     flashcards_md = None

@@ -13,6 +13,7 @@ import itertools
 import os
 
 def get_llm_api_func(model, api_key):
+    print(f'Using model: {model}, api_key: {api_key}') # DEBUG
     if model.startswith('gpt'):
         from openai import AsyncOpenAI
         aoai = AsyncOpenAI(api_key=api_key)
@@ -25,13 +26,13 @@ def get_llm_api_func(model, api_key):
         ).chat.completions.create, model=model)
     elif model.startswith('claude'):
         from anthropic import AsyncAnthropic
-        aanthropci = AsyncAnthropic(api_key=api_key)
+        aanthropic = AsyncAnthropic(api_key=api_key)
         if os.getenv('LOGFIRE_TOKEN') is not None:
             import logfire
-            logfire.instrument_anthropci(aanthropci)
+            logfire.instrument_anthropic(aanthropic)
         return partial(instructor.from_anthropic(
-            client=aanthropci,
-        ).messages.create, model=model)
+            client=aanthropic,
+        ).messages.create, model=model, max_tokens=7777)
     elif model.startswith('gemini'):
         import google.generativeai as genai
         genai.configure(api_key=api_key)
