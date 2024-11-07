@@ -23,6 +23,15 @@ def get_llm_api_func(model, api_key):
             client=aoai,
             mode=instructor.Mode.TOOLS_STRICT,
         ).chat.completions.create, model=model)
+    elif model.startswith('claude'):
+        from anthropic import AsyncAnthropic
+        aanthropci = AsyncAnthropic(api_key=api_key)
+        if os.getenv('LOGFIRE_TOKEN') is not None:
+            import logfire
+            logfire.instrument_anthropci(aanthropci)
+        return partial(instructor.from_anthropic(
+            client=aanthropci,
+        ).messages.create, model=model)
     elif model.startswith('gemini'):
         import google.generativeai as genai
         genai.configure(api_key=api_key)

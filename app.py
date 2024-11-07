@@ -147,7 +147,7 @@ def PersistentInput(**kwargs):
 
 @app.get('/~/api-key-div')
 def api_key(model: str):
-    provider = 'openai' if model.startswith('gpt') else 'google' if model.startswith('gemini') else None
+    provider = 'openai' if model.startswith('gpt') else 'google' if model.startswith('gemini') else 'anthropic' if model.startswith('claude') else None
     return (
         B(f'{provider.upper()}_API_KEY'),
         PersistentInput(name=f'{provider}_api_key', type='password', value=os.getenv(f'{provider.upper()}_API_KEY', ''), id=f'{provider}_api_key'),
@@ -165,6 +165,8 @@ def home():
                     Select(
                         Option('gpt-4o-mini', selected=True),
                         Option('gpt-4o'),
+                        Option('claude-3-5-haiku-latest'),
+                        Option('claude-3-5-sonnet-latest'),
                         Option('gemini-1.5-flash-8b'),
                         Option('gemini-1.5-flash-002'),
                         Option('gemini-1.5-pro-002'),
