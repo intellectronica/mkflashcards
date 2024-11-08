@@ -13,7 +13,6 @@ import itertools
 import os
 
 def get_llm_api_func(model, api_key):
-    print(f'Using model: {model}, api_key: {api_key}') # DEBUG
     if model.startswith('gpt'):
         from openai import AsyncOpenAI
         aoai = AsyncOpenAI(api_key=api_key)
@@ -44,7 +43,7 @@ def get_llm_api_func(model, api_key):
             logfire.instrument_openai(aoai)
         return partial(instructor.from_openai(
             client=aoai,
-            mode=instructor.Mode.MD_JSON,
+            mode=instructor.Mode.TOOLS,
         ).chat.completions.create, model=model)
     else:
         raise ValueError(f'Unknown model: {model}')
