@@ -34,13 +34,18 @@ def get_llm_api_func(model, api_key):
             client=aanthropic,
         ).messages.create, model=model, max_tokens=7777)
     elif model.startswith('gemini'):
-        import google.generativeai as genai
-        genai.configure(api_key=api_key)
-        return instructor.from_gemini(
-            client=genai.GenerativeModel(model),
-            mode=instructor.Mode.GEMINI_JSON,
-            use_async=True,
-        ).messages.create
+        from openai import AsyncOpenAI
+        aoai = AsyncOpenAI(
+            api_key=api_key,
+            base_url='https://generativelanguage.googleapis.com/v1beta/',
+        )
+        if os.getenv('LOGFIRE_TOKEN') is not None:
+            import logfire
+            logfire.instrument_openai(aoai)
+        return partial(instructor.from_openai(
+            client=aoai,
+            mode=instructor.Mode.MD_JSON,
+        ).chat.completions.create, model=model)
     else:
         raise ValueError(f'Unknown model: {model}')
 
