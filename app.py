@@ -174,7 +174,9 @@ def home():
                         hx_get='/~/api-key-div',
                         hx_trigger='change',
                         hx_target='#api_key_div',
+                        hx_on_change='modelOnChange()',
                     ),
+                    Script("loadModelSelection();"),
                 ),
             ),
             Grid(
