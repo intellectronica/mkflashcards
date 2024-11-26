@@ -13,7 +13,7 @@ import itertools
 import os
 
 def get_llm_api_func(model, api_key):
-    if model.startswith('gpt'):
+    if 'gpt' in model:
         from openai import AsyncOpenAI
         aoai = AsyncOpenAI(api_key=api_key)
         if os.getenv('LOGFIRE_TOKEN') is not None:
