@@ -165,7 +165,7 @@ def home():
                     Select(
                         Option('gpt-4o-mini', selected=True),
                         Option('gpt-4o'),
-                        Option('chatgpt-4o-latest'),
+                        Option('gpt-4o-2024-11-20'),
                         Option('claude-3-5-haiku-latest'),
                         Option('claude-3-5-sonnet-latest'),
                         name='model', id='model',
