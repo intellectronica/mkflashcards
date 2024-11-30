@@ -8,3 +8,10 @@
 .htmx-request.htmx-indicator{
   opacity:1;
 }
+
+.card {
+  --bulma-card-shadow: none;
+  border-width: 1px !important;
+  border-color: var(--bulma-text) !important;
+  border-style: solid !important;
+}

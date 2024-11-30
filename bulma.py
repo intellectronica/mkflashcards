@@ -19,6 +19,9 @@ def Textarea(*c, **kwargs):
 def Input(*c, **kwargs):
     return ft_hx('input', *c, cls='input', **kwargs)
 
+def Label(*c, **kwargs):
+    return ft_hx('label', *c, cls='label', **kwargs)
+
 def Card(*c, **kwargs):
     return ft_hx('div', *c, cls='card', **kwargs)
 
@@ -36,3 +39,9 @@ def Grid(*c, **kwargs):
 
 def Cell(*c, **kwargs):
     return ft_hx('div', *c, **kw(kwargs, cls='cell'))
+
+def Columns(*c, **kwargs):
+    return ft_hx('div', *c, **kw(kwargs, cls='columns'))
+
+def Column(*c, **kwargs):
+    return ft_hx('div', *c, **kw(kwargs, cls='column'))

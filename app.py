@@ -20,8 +20,12 @@ app, _ = fast_app(
             href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css",
             type="text/css",
         ),
+        Link(
+            rel="stylesheet",
+            href="/app.css",
+            type="text/css",
+        ),
         Script(src='/app.js'),
-        Style(src='/app.css')
     ],
 )
 
@@ -153,14 +157,14 @@ def home():
                     CardHeaderTitle('Configuration'),
                 ),
                 CardContent(
-                    Grid(
-                        Cell(
-                            B('OPENAI_API_KEY'),
-                            PersistentInput(name='openai_api_key', type='password', value=os.getenv('OPENAI_API_KEY', ''), id='openai_api_key'),
+                    Columns(
+                        Column(
+                            Label('OPENAI_API_KEY', for_='openai_api_key'),
+                            PersistentInput(name='openai_api_key', id='openai_api_key', type='password', value=os.getenv('OPENAI_API_KEY', '')),
                         ),
-                        Cell(
-                            B('JINA_API_KEY'),
-                            PersistentInput(name='jina_api_key', type='password', value=os.getenv('JINA_API_KEY', ''), id='jina_api_key'),
+                        Column(
+                            Label('JINA_API_KEY', for_='jina_api_key'),
+                            PersistentInput(name='jina_api_key', id='jina_api_key', type='password', value=os.getenv('JINA_API_KEY', '')),
                         ),
                     ),
                 ),
@@ -170,23 +174,25 @@ def home():
                     CardHeaderTitle('Input'),
                 ),
                 CardContent(
-                    Grid(
-                        Cell(
-                            B('URL'),
+                    Columns(
+                        Column(
+                            Label('URL', for_='url'),
                             Input(name='url', type='text', id='url'),
                         ),
-                        Cell(
-                            B('File (html/pdf/epub)'),
-                            Input(name='content', type='file', multiple=False, required=False, id='content'),
+                        Column(
+                            Label('File (html/pdf/epub)', for_='content'),
+                            Input(name='content', id='content', type='file', multiple=False, required=False),
                         ),
+                        Column(
+                            Button('Fetch Text', hx_post='/-/fetch-text', hx_target='#text', hx_swap='innerHTML', hx_indicator='#fetch_spinner'),
+                            Img(src='/spinner.svg', cls='htmx-indicator', id='fetch_spinner'),
+                            cls='is-2',
+                        ),
+                        cls='is-align-items-flex-end',
                     ),
                     Div(
-                        Button('Fetch Text', hx_post='/-/fetch-text', hx_target='#text', hx_swap='innerHTML', hx_indicator='#fetch_spinner'),
-                        Img(src='/spinner.svg', cls='htmx-indicator', id='fetch_spinner'),
-                    ),
-                    Div(
-                        B('Text'),
-                        Textarea(name='text', rows=7, id='text', style='font-family: monospace', hx_on_change='textOnChange()', hx_on__after_swap='textOnChange()'),
+                        Label('Text', for_='text'),
+                        Textarea(name='text', id='text', rows=7, style='font-family: monospace', hx_on_change='textOnChange()', hx_on__after_swap='textOnChange()'),
                     ),
                 ),
             ),
@@ -195,17 +201,25 @@ def home():
                     CardHeaderTitle('Generate Flashcards'),
                 ),
                 CardContent(
-                    Div(
-                        B('Number of flashcards to generate'),
-                        Input(name='num_flashcards', type='number', value=23, id='num_flashcards'),
+                    Columns(
+                        Column(
+                            Label('Number of flashcards to generate', for_='num_flashcards'),
+                            Input(name='num_flashcards', id='num_flashcards', type='number', value=23, style='width: 5em;'),
+                            cls='is-3',
+                        ),
+                        Column(
+                            Button('Generate Flashcards', hx_post='/-/generate-flashcards/', hx_target='#flashcards', hx_swap='outerHTML', hx_indicator='#generate_spinner'),
+                            Img(src='/spinner.svg', cls='htmx-indicator', id='generate_spinner'),
+                            cls='is-3',
+                        ),
+                        cls='is-align-items-flex-end',
                     ),
                     Div(
-                        Button('Generate Flashcards', hx_post='/-/generate-flashcards/', hx_target='#flashcards', hx_swap='outerHTML', hx_indicator='#generate_spinner'),
-                        Img(src='/spinner.svg', cls='htmx-indicator', id='generate_spinner'),
+                        Label('Flashcards', for_='flashcards'),
+                        Textarea(name='flashcards', id='flashcards', rows=13, style='font-family: monospace'),
+                        style='margin-bottom: 1em;',
                     ),
                     Div(
-                        B('Flashcards'),
-                        Textarea(name='flashcards', rows=13, id='flashcards', style='font-family: monospace'),
                         Button('Download', id='download', hx_on_click='downloadOnClick(event)'),
                     ),
                 ),
