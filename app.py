@@ -10,9 +10,19 @@ from markdown import markdown
 import hashlib
 
 from mkflashcards import *
+from bulma import *
 
-app, rt = fast_app(
-    hdrs=[Script(src='/app.js'), Style(src='/app.css')],
+app, _ = fast_app(
+    pico=False,
+    hdrs=[
+        Link(
+            rel="stylesheet",
+            href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css",
+            type="text/css",
+        ),
+        Script(src='/app.js'),
+        Style(src='/app.css')
+    ],
 )
 
 if os.getenv('LOGFIRE_TOKEN') is not None:
@@ -111,20 +121,6 @@ async def do_generate_flashcards(num_flashcards: int, text: str, task_id: str = 
     else:
         return Textarea(flashcards_md, name='flashcards', rows=13, id='flashcards', style='font-family: monospace'),
 
-ABOUT = """
-# Make Flashcards, automagically, with AI!
-
-This app uses AI to generate flashcards from a piece of text.
-
----
-
-Under Construction - See [The Road to NG ( Issue #14 )](https://github.com/intellectronica/mkflashcards/issues/14)
-
----
-
-Source code at [github.com/intellectronica/mkflashcards](https://github.com/intellectronica/mkflashcards).
-"""
-
 def PersistentInput(**kwargs):
     kwargs['hx_on_input'] = 'persistentInputOnInput(this)'
     return (
@@ -138,50 +134,83 @@ def PersistentInput(**kwargs):
 def home():
     return Title('MkFlashcards'), Form(
         Container(
-            Card(NotStr(markdown(ABOUT))),
-            Grid(
-                Div(
-                    B('OPENAI_API_KEY'),
-                    PersistentInput(name='openai_api_key', type='password', value=os.getenv('OPENAI_API_KEY', ''), id='openai_api_key'),
+            Card(
+                CardHeader(
+                    CardHeaderTitle('MkFlashcards'),
+                ),
+                CardContent(
+                    P('Make Flashcards, automagically, with AI!'),
+                    P(
+                        'UNDER CONSTRUCTION: See ',
+                        A('The Road to NG ( Issue #14 )',
+                          href='https://github.com/intellectronica/mkflashcards/issues/14'
+                        )
+                    ),
                 ),
             ),
-            Grid(
-                Div(
-                    B('JINA_API_KEY'),
-                    PersistentInput(name='jina_api_key', type='password', value=os.getenv('JINA_API_KEY', ''), id='jina_api_key'),
+            Card(
+                CardHeader(
+                    CardHeaderTitle('Configuration'),
                 ),
-                Div(
-                    B('URL'),
-                    Input(name='url', type='text', id='url'),
-                ),
-                Div(
-                    B('File (html/pdf/epub)'),
-                    Input(name='content', type='file', multiple=False, required=False, id='content'),
-                ),
-                Div(
-                    Img(src='/spinner.svg', cls='htmx-indicator', id='fetch_spinner'),
-                    Button('Fetch Text', hx_post='/-/fetch-text', hx_target='#text', hx_swap='innerHTML', hx_indicator='#fetch_spinner'),
-                )
-            ),
-            Div(
-                B('Text'),
-                Textarea(name='text', rows=7, id='text', style='font-family: monospace', hx_on_change='textOnChange()', hx_on__after_swap='textOnChange()'),
-            ),
-            Grid(
-                Div(
-                    B('Number of flashcards to generate'),
-                    Input(name='num_flashcards', type='number', value=23, id='num_flashcards'),
-                ),
-                Div(
-                    Img(src='/spinner.svg', cls='htmx-indicator', id='generate_spinner'),
-                    Button('Generate Flashcards', hx_post='/-/generate-flashcards/', hx_target='#flashcards', hx_swap='outerHTML', hx_indicator='#generate_spinner'),
+                CardContent(
+                    Grid(
+                        Cell(
+                            B('OPENAI_API_KEY'),
+                            PersistentInput(name='openai_api_key', type='password', value=os.getenv('OPENAI_API_KEY', ''), id='openai_api_key'),
+                        ),
+                        Cell(
+                            B('JINA_API_KEY'),
+                            PersistentInput(name='jina_api_key', type='password', value=os.getenv('JINA_API_KEY', ''), id='jina_api_key'),
+                        ),
+                    ),
                 ),
             ),
-            Div(
-                B('Flashcards'),
-                Textarea(name='flashcards', rows=13, id='flashcards', style='font-family: monospace'),
-                Button('Download', id='download', hx_on_click='downloadOnClick(event)'),
+            Card(
+                CardHeader(
+                    CardHeaderTitle('Input'),
+                ),
+                CardContent(
+                    Grid(
+                        Cell(
+                            B('URL'),
+                            Input(name='url', type='text', id='url'),
+                        ),
+                        Cell(
+                            B('File (html/pdf/epub)'),
+                            Input(name='content', type='file', multiple=False, required=False, id='content'),
+                        ),
+                    ),
+                    Div(
+                        Button('Fetch Text', hx_post='/-/fetch-text', hx_target='#text', hx_swap='innerHTML', hx_indicator='#fetch_spinner'),
+                        Img(src='/spinner.svg', cls='htmx-indicator', id='fetch_spinner'),
+                    ),
+                    Div(
+                        B('Text'),
+                        Textarea(name='text', rows=7, id='text', style='font-family: monospace', hx_on_change='textOnChange()', hx_on__after_swap='textOnChange()'),
+                    ),
+                ),
             ),
+            Card(
+                CardHeader(
+                    CardHeaderTitle('Generate Flashcards'),
+                ),
+                CardContent(
+                    Div(
+                        B('Number of flashcards to generate'),
+                        Input(name='num_flashcards', type='number', value=23, id='num_flashcards'),
+                    ),
+                    Div(
+                        Button('Generate Flashcards', hx_post='/-/generate-flashcards/', hx_target='#flashcards', hx_swap='outerHTML', hx_indicator='#generate_spinner'),
+                        Img(src='/spinner.svg', cls='htmx-indicator', id='generate_spinner'),
+                    ),
+                    Div(
+                        B('Flashcards'),
+                        Textarea(name='flashcards', rows=13, id='flashcards', style='font-family: monospace'),
+                        Button('Download', id='download', hx_on_click='downloadOnClick(event)'),
+                    ),
+                ),
+            ),
+            style='margin-left: 10em; margin-right: 10em; margin-top: 5em; margin-bottom: 5em;',
         ),
         hx_encoding='multipart/form-data',
     )
