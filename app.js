@@ -14,21 +14,6 @@ function textOnChange() {
   document.getElementById('num_flashcards').value = Math.round(document.getElementById('text').value.length / 234);
 }
 
-function modelOnChange() {
-  localStorage.setItem('model', document.getElementById('model').value);
-}
-
-function loadModelSelection() {
-  window.onload = () => {
-    const model = localStorage.getItem('model');
-    if (model) {
-      document.getElementById('model').value = model;
-      htmx.trigger('#model', 'change');
-    }
-  };
-}
-
-
 function downloadOnClick(event) {
   event.preventDefault();
   const content = document.getElementById('flashcards').value;

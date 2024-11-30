@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-import instructor
+from openai import AsyncOpenAI
 from bs4 import BeautifulSoup
 from textwrap import dedent
 import json
@@ -12,58 +12,29 @@ import asyncio
 import itertools
 import os
 
-def get_llm_api_func(model, api_key):
-    if 'gpt' in model:
-        from openai import AsyncOpenAI
-        aoai = AsyncOpenAI(api_key=api_key)
-        if os.getenv('LOGFIRE_TOKEN') is not None:
-            import logfire
-            logfire.instrument_openai(aoai)
-        return partial(instructor.from_openai(
-            client=aoai,
-            mode=instructor.Mode.TOOLS_STRICT,
-        ).chat.completions.create, model=model)
-    elif model.startswith('claude'):
-        from anthropic import AsyncAnthropic
-        aanthropic = AsyncAnthropic(api_key=api_key)
-        if os.getenv('LOGFIRE_TOKEN') is not None:
-            import logfire
-            logfire.instrument_anthropic(aanthropic)
-        return partial(instructor.from_anthropic(
-            client=aanthropic,
-        ).messages.create, model=model, max_tokens=7777)
-    elif model.startswith('gemini'):
-        from openai import AsyncOpenAI
-        aoai = AsyncOpenAI(
-            api_key=api_key,
-            base_url='https://generativelanguage.googleapis.com/v1beta/',
-        )
-        if os.getenv('LOGFIRE_TOKEN') is not None:
-            import logfire
-            logfire.instrument_openai(aoai)
-        return partial(instructor.from_openai(
-            client=aoai,
-            mode=instructor.Mode.TOOLS,
-        ).chat.completions.create, model=model)
-    else:
-        raise ValueError(f'Unknown model: {model}')
+OPENAI_MODEL = 'gpt-4o-2024-11-20'
 
-def llm(api_key: str,
+async def llm(api_key: str,
         model: str,
-        response_model: BaseModel = BaseModel,
+        response_format: BaseModel = BaseModel,
         system: str = None, user: str = None,
         **kwargs):
-    ai_func = get_llm_api_func(model, api_key)
+    aoai = AsyncOpenAI(api_key=api_key)
+    if os.getenv('LOGFIRE_TOKEN') is not None:
+        import logfire
+        logfire.instrument_openai(aoai)
     messages = []
     if system:
         messages.append({"role": "system", "content": system})
     if user:
         messages.append({"role": "user", "content": user})
-    return ai_func(
-        response_model=response_model,
+    completion = await aoai.beta.chat.completions.parse(
+        model=model,
         messages=messages,
+        response_format=response_format,
         **kwargs,
     )
+    return completion.choices[0].message.parsed
 
 def fit_text(txt, max_length=345678, chunk_size=1234):
     if len(txt) <= max_length:
@@ -83,11 +54,11 @@ class TextSummary(BaseModel):
     title: str = Field(..., description="Title (includes original title and author if available).")
     summary: str = Field(..., description="One-pager summary of the text (roughly 500 tokens).")
 
-async def summarize_text(api_key, model, txt):
-    max_length = 678987 if model.startswith('gemini') else 345678
+async def summarize_text(api_key, txt):
+    max_length = 345678
     result = await llm(
         api_key,
-        model,
+        OPENAI_MODEL,
         TextSummary,
         'Read the user-provided text and summarize it with a title and a one-pager summary.',
         fit_text(txt, max_length=max_length),
@@ -128,17 +99,19 @@ class Flashcard(BaseModel):
 class FlashcardSet(BaseModel):
     flashcards: list[Flashcard]
 
-async def get_chunk_flashcards(api_key, model, summary, chunk, system):
+async def get_chunk_flashcards(api_key, summary, chunk, system):
     prompt = f'{summary}\n<chunk>\n{chunk}\n</chunk>\n\n{system}'
-    return (await llm(
+    response = await llm(
         api_key,
-        model,
+        OPENAI_MODEL,
         FlashcardSet,
-        user=prompt,
-    )).flashcards
+        prompt,
+    )
+    return response.flashcards
 
-async def get_flashcards(api_key, model, txt, num_flashcards):
-    summary = await summarize_text(api_key, model, txt)
+async def get_flashcards(api_key, txt, num_flashcards):
+    summary = await summarize_text(api_key, txt)
+    print(summary) # DEBUG
     chunks = get_chunks(txt)
     flashcards_per_chunk = math.ceil(num_flashcards / len(chunks))
 
@@ -174,8 +147,8 @@ async def get_flashcards(api_key, model, txt, num_flashcards):
     IMPORTANT: IT IS CRUCIAL THAT YOU FOLLOW THE INSTRUCTIONS ABOVE EXACTLY.
     """).strip()
 
-    first_result = await get_chunk_flashcards(api_key, model, summary, chunks[0], system)
-    tasks = [get_chunk_flashcards(api_key, model, summary, chunk, system) for chunk in chunks[1:]]
+    first_result = await get_chunk_flashcards(api_key, summary, chunks[0], system)
+    tasks = [get_chunk_flashcards(api_key, summary, chunk, system) for chunk in chunks[1:]]
     other_results = await asyncio.gather(*tasks)
     results = [first_result] + other_results
     flashcard_infos = list(itertools.chain(*results))
