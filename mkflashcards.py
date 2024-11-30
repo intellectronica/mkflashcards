@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-import instructor
+from openai import AsyncOpenAI
 from bs4 import BeautifulSoup
 from textwrap import dedent
 import json
@@ -14,33 +14,27 @@ import os
 
 OPENAI_MODEL = 'gpt-4o-2024-11-20'
 
-def get_llm_api_func(model, api_key):
-    from openai import AsyncOpenAI
+async def llm(api_key: str,
+        model: str,
+        response_format: BaseModel = BaseModel,
+        system: str = None, user: str = None,
+        **kwargs):
     aoai = AsyncOpenAI(api_key=api_key)
     if os.getenv('LOGFIRE_TOKEN') is not None:
         import logfire
         logfire.instrument_openai(aoai)
-    return partial(instructor.from_openai(
-        client=aoai,
-        mode=instructor.Mode.TOOLS_STRICT,
-    ).chat.completions.create, model=model)
-
-def llm(api_key: str,
-        model: str,
-        response_model: BaseModel = BaseModel,
-        system: str = None, user: str = None,
-        **kwargs):
-    ai_func = get_llm_api_func(model, api_key)
     messages = []
     if system:
         messages.append({"role": "system", "content": system})
     if user:
         messages.append({"role": "user", "content": user})
-    return ai_func(
-        response_model=response_model,
+    completion = await aoai.beta.chat.completions.parse(
+        model=model,
         messages=messages,
+        response_format=response_format,
         **kwargs,
     )
+    return completion.choices[0].message.parsed
 
 def fit_text(txt, max_length=345678, chunk_size=1234):
     if len(txt) <= max_length:
@@ -107,15 +101,17 @@ class FlashcardSet(BaseModel):
 
 async def get_chunk_flashcards(api_key, summary, chunk, system):
     prompt = f'{summary}\n<chunk>\n{chunk}\n</chunk>\n\n{system}'
-    return (await llm(
+    response = await llm(
         api_key,
         OPENAI_MODEL,
         FlashcardSet,
-        user=prompt,
-    )).flashcards
+        prompt,
+    )
+    return response.flashcards
 
 async def get_flashcards(api_key, txt, num_flashcards):
     summary = await summarize_text(api_key, txt)
+    print(summary) # DEBUG
     chunks = get_chunks(txt)
     flashcards_per_chunk = math.ceil(num_flashcards / len(chunks))
 
