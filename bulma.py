@@ -1,4 +1,4 @@
-from fasthtml.common import *
+from fasthtml.common import ft_hx
 
 def kw(kwargs, cls):
     if 'cls' in kwargs:

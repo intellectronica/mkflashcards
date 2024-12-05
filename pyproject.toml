@@ -12,7 +12,18 @@ dependencies = [
     "markdown>=3.7",
     "openai>=1.51.0",
     "pydantic>=2.9.2",
-    "python-fasthtml>=0.6.9",
+    "python-fasthtml>=0.10.1",
     "requests>=2.32.3",
     "tiktoken>=0.8.0",
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.dev-dependencies]
+ruff = "^0.8.2"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.8.2",
 ]
