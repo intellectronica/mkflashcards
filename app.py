@@ -1,16 +1,28 @@
-import os
-import tempfile
+"""MkFlashcards app: FastHTML UI and backend processes."""
+
 import asyncio
 import base64
+import hashlib
+import os
 import subprocess
 import tempfile
 
-from fasthtml.common import *
-from markdown import markdown
-import hashlib
+from fasthtml.common import A, Div, Form, Img, Link, P, Script, Title, UploadFile, fast_app, serve
 
-from mkflashcards import *
-from bulma import *
+from bulma import (
+    Button,
+    Card,
+    CardContent,
+    CardHeader,
+    CardHeaderTitle,
+    Column,
+    Columns,
+    Container,
+    Input,
+    Label,
+    Textarea,
+)
+from mkflashcards import fetch_text, get_flashcards
 
 app, _ = fast_app(
     pico=False,
@@ -39,7 +51,7 @@ def epub_to_html(epub_bytes):
     with tempfile.NamedTemporaryFile(delete=False, suffix='.epub') as epub_file:
         epub_file_path = epub_file.name
         epub_file.write(epub_bytes)
-    
+
     with tempfile.NamedTemporaryFile(delete=False, suffix='.html') as html_file:
         html_file_path = html_file.name
 
@@ -48,28 +60,27 @@ def epub_to_html(epub_bytes):
             ['pandoc', epub_file_path, '-t', 'html', '-o', html_file_path],
             check=True,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
         )
-        
-        with open(html_file_path, 'r', encoding='utf-8') as file:
+
+        with open(html_file_path, encoding='utf-8') as file:
             html_content = file.read()
-            
-    except subprocess.CalledProcessError as e:
-        print(f"Pandoc conversion failed: {e.stderr.decode('utf-8')}")
+
+    except subprocess.CalledProcessError:
         html_content = ""
-        
+
     finally:
         os.remove(epub_file_path)
         os.remove(html_file_path)
-        
+
     return html_content
 
 @app.post('/-/fetch-text')
-async def do_fetch_text(request, jina_api_key: str, url: str, content: UploadFile = None):
+async def do_fetch_text(jina_api_key: str, url: str, content: UploadFile = None):
     content_data, content_text, content_ext = None, None, None
     if content is not None and content.filename is not None:
         content_data = await content.read()
-        content_ext = os.path.splitext(content.filename)[1].replace('.', '')    
+        content_ext = os.path.splitext(content.filename)[1].replace('.', '')
         if content_ext == 'pdf':
             content_text = base64.b64encode(content_data).decode('utf-8')
         elif content_ext == 'html':
@@ -81,7 +92,7 @@ async def do_fetch_text(request, jina_api_key: str, url: str, content: UploadFil
             raise ValueError(f'Unsupported file type: {content_ext}')
     return fetch_text(
         jina_api_key,
-        url=(len(url.strip()) > 0 and url or None),
+        url=((len(url.strip()) > 0 and url) or None),
         content=content_text,
         content_ext=content_ext,
     )
@@ -96,7 +107,11 @@ async def generate_flashcards_task(api_key, text, num_flashcards, task_id):
     flashcards = await get_flashcards(api_key, text, num_flashcards)
     flashcard_mds = []
     for flashcard in flashcards:
-        flashcard_md = f'### {flashcard.front.strip()}\n---\n{flashcard.back.strip()}\n\n{md_quote(flashcard.quote.strip())}'
+        flashcard_md = (
+            f'### {flashcard.front.strip()}\n---\n'
+            f'{flashcard.back.strip()}\n\n'
+            f'{md_quote(flashcard.quote.strip())}'
+        )
         flashcard_mds.append(flashcard_md.strip())
     flashcards_md = '\n===\n'.join(flashcard_mds)
     with open(get_task_tempfile_path(task_id), 'w') as file:
@@ -112,7 +127,7 @@ async def do_generate_flashcards(num_flashcards: int, text: str, task_id: str = 
 
     flashcards_md = None
     if os.path.exists(get_task_tempfile_path(task_id)):
-        with open(get_task_tempfile_path(task_id), 'r') as file:
+        with open(get_task_tempfile_path(task_id)) as file:
             flashcards_md = file.read()
         os.remove(get_task_tempfile_path(task_id))
     if flashcards_md is None:
@@ -122,8 +137,13 @@ async def do_generate_flashcards(num_flashcards: int, text: str, task_id: str = 
             hx_post=f'/-/generate-flashcards/{task_id}',
             hx_trigger='every 1s', hx_swap='outerHTML',
         )
-    else:
-        return Textarea(flashcards_md, name='flashcards', rows=13, id='flashcards', style='font-family: monospace'),
+    return Textarea(
+        flashcards_md,
+        name='flashcards',
+        rows=13,
+        id='flashcards',
+        style='font-family: monospace',
+    )
 
 def PersistentInput(**kwargs):
     kwargs['hx_on_input'] = 'persistentInputOnInput(this)'
@@ -147,8 +167,8 @@ def home():
                     P(
                         'UNDER CONSTRUCTION: See ',
                         A('The Road to NG ( Issue #14 )',
-                          href='https://github.com/intellectronica/mkflashcards/issues/14'
-                        )
+                          href='https://github.com/intellectronica/mkflashcards/issues/14',
+                        ),
                     ),
                 ),
             ),
@@ -160,11 +180,21 @@ def home():
                     Columns(
                         Column(
                             Label('OPENAI_API_KEY', for_='openai_api_key'),
-                            PersistentInput(name='openai_api_key', id='openai_api_key', type='password', value=os.getenv('OPENAI_API_KEY', '')),
+                            PersistentInput(
+                                name='openai_api_key',
+                                id='openai_api_key',
+                                type='password',
+                                value=os.getenv('OPENAI_API_KEY', ''),
+                            ),
                         ),
                         Column(
                             Label('JINA_API_KEY', for_='jina_api_key'),
-                            PersistentInput(name='jina_api_key', id='jina_api_key', type='password', value=os.getenv('JINA_API_KEY', '')),
+                            PersistentInput(
+                                name='jina_api_key',
+                                id='jina_api_key',
+                                type='password',
+                                value=os.getenv('JINA_API_KEY', ''),
+                            ),
                         ),
                     ),
                 ),
@@ -181,10 +211,22 @@ def home():
                         ),
                         Column(
                             Label('File (html/pdf/epub)', for_='content'),
-                            Input(name='content', id='content', type='file', multiple=False, required=False),
+                            Input(
+                                name='content',
+                                id='content',
+                                type='file',
+                                multiple=False,
+                                required=False,
+                            ),
                         ),
                         Column(
-                            Button('Fetch Text', hx_post='/-/fetch-text', hx_target='#text', hx_swap='innerHTML', hx_indicator='#fetch_spinner'),
+                            Button(
+                                'Fetch Text',
+                                hx_post='/-/fetch-text',
+                                hx_target='#text',
+                                hx_swap='innerHTML',
+                                hx_indicator='#fetch_spinner',
+                            ),
                             Img(src='/spinner.svg', cls='htmx-indicator', id='fetch_spinner'),
                             cls='is-2',
                         ),
@@ -192,7 +234,14 @@ def home():
                     ),
                     Div(
                         Label('Text', for_='text'),
-                        Textarea(name='text', id='text', rows=7, style='font-family: monospace', hx_on_change='textOnChange()', hx_on__after_swap='textOnChange()'),
+                        Textarea(
+                            name='text',
+                            id='text',
+                            rows=7,
+                            style='font-family: monospace',
+                            hx_on_change='textOnChange()',
+                            hx_on__after_swap='textOnChange()',
+                        ),
                     ),
                 ),
             ),
@@ -204,11 +253,23 @@ def home():
                     Columns(
                         Column(
                             Label('Number of flashcards to generate', for_='num_flashcards'),
-                            Input(name='num_flashcards', id='num_flashcards', type='number', value=23, style='width: 5em;'),
+                            Input(
+                                name='num_flashcards',
+                                id='num_flashcards',
+                                type='number',
+                                value=23,
+                                style='width: 5em;',
+                            ),
                             cls='is-3',
                         ),
                         Column(
-                            Button('Generate Flashcards', hx_post='/-/generate-flashcards/', hx_target='#flashcards', hx_swap='outerHTML', hx_indicator='#generate_spinner'),
+                            Button(
+                                'Generate Flashcards',
+                                hx_post='/-/generate-flashcards/',
+                                hx_target='#flashcards',
+                                hx_swap='outerHTML',
+                                hx_indicator='#generate_spinner',
+                            ),
                             Img(src='/spinner.svg', cls='htmx-indicator', id='generate_spinner'),
                             cls='is-3',
                         ),
@@ -216,7 +277,12 @@ def home():
                     ),
                     Div(
                         Label('Flashcards', for_='flashcards'),
-                        Textarea(name='flashcards', id='flashcards', rows=13, style='font-family: monospace'),
+                        Textarea(
+                            name='flashcards',
+                            id='flashcards',
+                            rows=13,
+                            style='font-family: monospace',
+                        ),
                         style='margin-bottom: 1em;',
                     ),
                     Div(
