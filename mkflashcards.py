@@ -1,16 +1,17 @@
-from pydantic import BaseModel, Field
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from openai import AsyncOpenAI
-from bs4 import BeautifulSoup
-from textwrap import dedent
-import json
-import requests
-import math
-import random
-from functools import partial
+"""Logic for creating flashcards."""
+
 import asyncio
 import itertools
+import math
 import os
+import random
+from textwrap import dedent
+
+import requests
+from bs4 import BeautifulSoup
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from openai import AsyncOpenAI
+from pydantic import BaseModel, Field
 
 OPENAI_MODEL = 'gpt-4o-2024-11-20'
 
@@ -195,7 +196,7 @@ def fetch_text(jina_api_key, url=None, content=None, content_ext=None):
         else:
             raise ValueError(f'Unsupported content type: {content_ext}')
         return requests.post(
-            f'https://r.jina.ai/',
+            'https://r.jina.ai/',
             headers={
                 'Authorization': f'Bearer {jina_api_key}',
                 'Content-Type': 'application/json',

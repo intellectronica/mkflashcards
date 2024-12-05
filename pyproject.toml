@@ -20,6 +20,33 @@ dependencies = [
 [tool.ruff]
 line-length = 100
 
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "Q000",
+    "ANN001",
+    "ANN201",
+    "D103",
+    "RUF006",
+    "RUF013",
+    "S603",
+    "S607",
+    "S324",
+    "UP022",
+    "TRY003",
+    "EM102",
+    "PTH107",
+    "PTH118",
+    "PTH122",
+    "PTH123",
+    "PTH110",
+    "ASYNC230",
+    "N802",
+]
+
+[tool.ruff.format]
+quote-style = "single"
+
 [tool.dev-dependencies]
 ruff = "^0.8.2"
 
