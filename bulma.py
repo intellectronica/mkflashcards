@@ -1,4 +1,7 @@
+"""Bulma CSS framework components for FastHTML."""
+
 from fasthtml.common import ft_hx
+
 
 def kw(kwargs, cls):
     if 'cls' in kwargs:

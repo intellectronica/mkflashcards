@@ -37,7 +37,7 @@ async def llm(api_key: str,
     )
     return completion.choices[0].message.parsed
 
-def fit_text(txt, max_length=345678, chunk_size=1234):
+def fit_text(txt, max_length=345678):
     if len(txt) <= max_length:
         return txt
     chunks = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
@@ -45,11 +45,13 @@ def fit_text(txt, max_length=345678, chunk_size=1234):
         chunk_size=345,
         chunk_overlap=0,
     ).split_text(txt)
-    num_chunks_to_remove = math.ceil(len(chunks) * ((len(txt) - max_length)) / len(txt))
+    num_chunks_to_remove = math.ceil(len(chunks) * (len(txt) - max_length) / len(txt))
     chunk_idxs_to_remove = random.sample(range(1, len(chunks) - 1), num_chunks_to_remove)
-    remaining_chunks = [chunk for idx, chunk in enumerate(chunks) if idx not in chunk_idxs_to_remove]
-    short_text = '\n\n...\n\n'.join(remaining_chunks)
-    return short_text
+    remaining_chunks = [
+        chunk for idx, chunk in enumerate(chunks)
+        if idx not in chunk_idxs_to_remove
+    ]
+    return '\n\n...\n\n'.join(remaining_chunks)
 
 class TextSummary(BaseModel):
     title: str = Field(..., description="Title (includes original title and author if available).")
@@ -64,15 +66,14 @@ async def summarize_text(api_key, txt):
         'Read the user-provided text and summarize it with a title and a one-pager summary.',
         fit_text(txt, max_length=max_length),
     )
-    summary = dedent(f"""
+    return dedent(f"""
     <context>
       <title>{result.title}</title>
       <summary>
         {result.summary}
       </summary>
-    </context>        
+    </context>
     """).strip()
-    return summary
 
 def get_chunks(txt):
     text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
@@ -94,7 +95,8 @@ class Flashcard(BaseModel):
     ))
     quote: str = Field(..., description=(
         'Quote from the chunk that the flashcard is based on. '
-        'Include a short (2-3 sentences) verbarim excerpt from the chunk that the flashcard is based on.'
+        'Include a short (2-3 sentences) verbarim excerpt from the chunk '
+        'that the flashcard is based on.'
     ))
 
 class FlashcardSet(BaseModel):
@@ -112,7 +114,6 @@ async def get_chunk_flashcards(api_key, summary, chunk, system):
 
 async def get_flashcards(api_key, txt, num_flashcards):
     summary = await summarize_text(api_key, txt)
-    print(summary) # DEBUG
     chunks = get_chunks(txt)
     flashcards_per_chunk = math.ceil(num_flashcards / len(chunks))
 
@@ -140,7 +141,7 @@ async def get_flashcards(api_key, txt, num_flashcards):
     generate EXACTLY {flashcards_per_chunk} FLASHCARDS based on the contents of \
     the chunk. You must not generate more or fewer flashcards than the \
     {flashcards_per_chunk} specified.
-    
+
     ONLY USE THE CONTENTS OF THE CHUNK FOR THE FLASHCARDS AND QUOTES.
     NEVER RELY ON TEXT FROM THE SUMMARY FOR THE FOCUS OF THE FLASHCARDS \
     OR THE QUOTES.
@@ -151,10 +152,9 @@ async def get_flashcards(api_key, txt, num_flashcards):
     first_result = await get_chunk_flashcards(api_key, summary, chunks[0], system)
     tasks = [get_chunk_flashcards(api_key, summary, chunk, system) for chunk in chunks[1:]]
     other_results = await asyncio.gather(*tasks)
-    results = [first_result] + other_results
-    flashcard_infos = list(itertools.chain(*results))
+    results = [first_result, *other_results]
+    return list(itertools.chain(*results))
 
-    return flashcard_infos
 
 def fix_html(input_html):
     soup = BeautifulSoup(input_html, 'html.parser')
@@ -178,16 +178,16 @@ def fix_html(input_html):
     for element in list(soup.contents):
         if element != soup.html:
             soup.html.body.append(element.extract())
-    formatted_html = soup.prettify()
-    return formatted_html
+    return soup.prettify()
 
 def fetch_text(jina_api_key, url=None, content=None, content_ext=None):
     if url:
         return requests.get(
             f'https://r.jina.ai/{url}',
-            headers={'Authorization': f'Bearer {jina_api_key}'}
+            headers={'Authorization': f'Bearer {jina_api_key}'},
+            timeout=123,
         ).text
-    elif content:
+    if content:
         payload = { 'url': 'http://example.com/' }
         if content_ext == 'pdf':
             payload['pdf'] = content
@@ -202,4 +202,6 @@ def fetch_text(jina_api_key, url=None, content=None, content_ext=None):
                 'Content-Type': 'application/json',
             },
             json=payload,
+            timeout=123,
         ).text
+    return None

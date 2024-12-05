@@ -60,13 +60,13 @@ def epub_to_html(epub_bytes):
             ['pandoc', epub_file_path, '-t', 'html', '-o', html_file_path],
             check=True,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
         )
 
         with open(html_file_path, encoding='utf-8') as file:
             html_content = file.read()
 
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError:
         html_content = ""
 
     finally:
@@ -137,7 +137,13 @@ async def do_generate_flashcards(num_flashcards: int, text: str, task_id: str = 
             hx_post=f'/-/generate-flashcards/{task_id}',
             hx_trigger='every 1s', hx_swap='outerHTML',
         )
-    return Textarea(flashcards_md, name='flashcards', rows=13, id='flashcards', style='font-family: monospace'),
+    return Textarea(
+        flashcards_md,
+        name='flashcards',
+        rows=13,
+        id='flashcards',
+        style='font-family: monospace',
+    )
 
 def PersistentInput(**kwargs):
     kwargs['hx_on_input'] = 'persistentInputOnInput(this)'
@@ -161,8 +167,8 @@ def home():
                     P(
                         'UNDER CONSTRUCTION: See ',
                         A('The Road to NG ( Issue #14 )',
-                          href='https://github.com/intellectronica/mkflashcards/issues/14'
-                        )
+                          href='https://github.com/intellectronica/mkflashcards/issues/14',
+                        ),
                     ),
                 ),
             ),
@@ -178,7 +184,7 @@ def home():
                                 name='openai_api_key',
                                 id='openai_api_key',
                                 type='password',
-                                value=os.getenv('OPENAI_API_KEY', '')
+                                value=os.getenv('OPENAI_API_KEY', ''),
                             ),
                         ),
                         Column(
@@ -219,7 +225,7 @@ def home():
                                 hx_post='/-/fetch-text',
                                 hx_target='#text',
                                 hx_swap='innerHTML',
-                                hx_indicator='#fetch_spinner'
+                                hx_indicator='#fetch_spinner',
                             ),
                             Img(src='/spinner.svg', cls='htmx-indicator', id='fetch_spinner'),
                             cls='is-2',
@@ -234,7 +240,7 @@ def home():
                             rows=7,
                             style='font-family: monospace',
                             hx_on_change='textOnChange()',
-                            hx_on__after_swap='textOnChange()'
+                            hx_on__after_swap='textOnChange()',
                         ),
                     ),
                 ),
@@ -262,7 +268,7 @@ def home():
                                 hx_post='/-/generate-flashcards/',
                                 hx_target='#flashcards',
                                 hx_swap='outerHTML',
-                                hx_indicator='#generate_spinner'
+                                hx_indicator='#generate_spinner',
                             ),
                             Img(src='/spinner.svg', cls='htmx-indicator', id='generate_spinner'),
                             cls='is-3',
@@ -275,7 +281,7 @@ def home():
                             name='flashcards',
                             id='flashcards',
                             rows=13,
-                            style='font-family: monospace'
+                            style='font-family: monospace',
                         ),
                         style='margin-bottom: 1em;',
                     ),
