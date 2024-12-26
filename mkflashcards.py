@@ -11,31 +11,48 @@ import requests
 from bs4 import BeautifulSoup
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from openai import AsyncOpenAI
+from openai.types.chat import ChatCompletionToolParam
 from pydantic import BaseModel, Field
+from pydantic_ai import Agent
+from pydantic_ai.models.openai import OpenAIModel
+from pydantic_ai.tools import ToolDefinition
+
+
+class StrictOpenAIModel(OpenAIModel):
+    @staticmethod
+    def _map_tool_definition(f: ToolDefinition) -> ChatCompletionToolParam:
+        parameters = f.parameters_json_schema
+        parameters['additionalProperties'] = False
+        return {
+            'type': 'function',
+            'function': {
+                'name': f.name,
+                'description': f.description,
+                'parameters': parameters,
+                'strict': True,
+            },
+        }
+
 
 OPENAI_MODEL = 'gpt-4o-2024-11-20'
 
-async def llm(api_key: str,
-        model: str,
-        response_format: BaseModel = BaseModel,
+async def llm(
+        api_key: str, model: str,
+        result_type: BaseModel = BaseModel,
         system: str = None, user: str = None,
-        **kwargs):
+        strict: bool = False):
     aoai = AsyncOpenAI(api_key=api_key)
     if os.getenv('LOGFIRE_TOKEN') is not None:
         import logfire
         logfire.instrument_openai(aoai)
-    messages = []
-    if system:
-        messages.append({"role": "system", "content": system})
-    if user:
-        messages.append({"role": "user", "content": user})
-    completion = await aoai.beta.chat.completions.parse(
-        model=model,
-        messages=messages,
-        response_format=response_format,
-        **kwargs,
-    )
-    return completion.choices[0].message.parsed
+        logfire.instrument_asyncpg()
+    if strict:
+        openai_model = StrictOpenAIModel(model, openai_client=aoai)
+    else:
+        openai_model = OpenAIModel(model, openai_client=aoai)
+    agent = Agent(openai_model, result_type=result_type, system_prompt=system)
+    response = await agent.run(user)
+    return response.data
 
 def fit_text(txt, max_length=345678):
     if len(txt) <= max_length:
@@ -60,11 +77,11 @@ class TextSummary(BaseModel):
 async def summarize_text(api_key, txt):
     max_length = 345678
     result = await llm(
-        api_key,
-        OPENAI_MODEL,
-        TextSummary,
-        'Read the user-provided text and summarize it with a title and a one-pager summary.',
-        fit_text(txt, max_length=max_length),
+        api_key=api_key,
+        model=OPENAI_MODEL,
+        result_type=TextSummary,
+        system='Read the user-provided text and summarize it with a title and a one-pager summary.',
+        user=fit_text(txt, max_length=max_length),
     )
     return dedent(f"""
     <context>
@@ -103,12 +120,13 @@ class FlashcardSet(BaseModel):
     flashcards: list[Flashcard]
 
 async def get_chunk_flashcards(api_key, summary, chunk, system):
-    prompt = f'{summary}\n<chunk>\n{chunk}\n</chunk>\n\n{system}'
+    prompt = f'{summary}\n\n<chunk>\n{chunk}\n</chunk>'
     response = await llm(
-        api_key,
-        OPENAI_MODEL,
-        FlashcardSet,
-        prompt,
+        api_key=api_key,
+        model=OPENAI_MODEL,
+        result_type=FlashcardSet,
+        system=system,
+        user=prompt,
     )
     return response.flashcards
 

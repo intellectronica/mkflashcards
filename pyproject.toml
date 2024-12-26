@@ -5,12 +5,14 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "anthropic>=0.39.0",
+    "asyncpg>=0.30.0",
     "beautifulsoup4>=4.12.3",
     "langchain-text-splitters>=0.3.0",
-    "logfire[openai,requests,starlette]>=1.0.1",
+    "logfire[asyncpg,requests,starlette]>=1.0.1",
     "markdown>=3.7",
-    "openai>=1.51.0",
+    "openai>=1.58.1",
+    "opentelemetry-instrumentation-asyncpg>=0.50b0",
+    "pydantic-ai>=0.0.15",
     "pydantic>=2.9.2",
     "python-fasthtml>=0.10.1",
     "requests>=2.32.3",
@@ -36,6 +38,9 @@ ignore = [
     "UP022",
     "TRY003",
     "EM102",
+    "FBT001",
+    "FBT002",
+    "PLR0913",
     "PTH107",
     "PTH118",
     "PTH122",
