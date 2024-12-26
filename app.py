@@ -165,9 +165,8 @@ def home():
                 CardContent(
                     P('Make Flashcards, automagically, with AI!'),
                     P(
-                        'UNDER CONSTRUCTION: See ',
-                        A('The Road to NG ( Issue #14 )',
-                          href='https://github.com/intellectronica/mkflashcards/issues/14',
+                        A('github.com/intellectronica/mkflashcards',
+                          href='https://github.com/intellectronica/mkflashcards',
                         ),
                     ),
                 ),
